@@ -92,6 +92,7 @@ export interface UserSession {
 // Environment bindings for Cloudflare Workers
 export interface Env {
   DB: D1Database;
+  ANALYTICS_SERVICE_URL?: string;
 }
 
 // API Request/Response types
@@ -163,4 +164,72 @@ export interface GraphData {
     type: EdgeType;
     weight: number;
   }>;
+}
+
+// Analytics Service types
+export interface HistoricalPrice {
+  asset_id: string;
+  price: number;
+  sale_date: string;
+  similarity_score: number;
+}
+
+export interface TrustMetric {
+  node_id: string;
+  node_type: string;
+  trust_level: number;
+  weight: number;
+}
+
+export interface ContextEvent {
+  event_type: string;
+  impact_score: number;
+  timestamp: string;
+}
+
+export interface FairPriceRequest {
+  asset_id: string;
+  current_price?: number;
+  historical_prices: HistoricalPrice[];
+  trust_metrics: TrustMetric[];
+  context_events?: ContextEvent[];
+}
+
+export interface FairPriceResponse {
+  asset_id: string;
+  fair_value: number;
+  confidence_interval: [number, number];
+  risk_score: number;
+  reasoning: {
+    base_fair_value: number;
+    trust_adjustment: number;
+    context_adjustment: number;
+    confidence_interval: {
+      lower: number;
+      upper: number;
+    };
+    data_points: number;
+    avg_similarity: number;
+    price_dispersion: number;
+    trust_level: number;
+  };
+}
+
+export interface RiskScoreRequest {
+  asset_id: string;
+  price: number;
+  fair_value: number;
+  liquidity_score: number;
+  trust_metrics: TrustMetric[];
+}
+
+export interface RiskScoreResponse {
+  asset_id: string;
+  risk_score: number;
+  risk_level: string;
+  factors: {
+    price_deviation_risk: number;
+    liquidity_risk: number;
+    reputation_risk: number;
+  };
 }

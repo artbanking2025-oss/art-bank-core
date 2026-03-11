@@ -3,6 +3,12 @@ import { cors } from 'hono/cors';
 import { serveStatic } from 'hono/cloudflare-workers';
 import type { Env } from './types';
 import { ArtBankDB } from './lib/db';
+import { 
+  globalEventBus, 
+  createTradeEvent, 
+  createAssetEvent, 
+  createPriceCalculationEvent 
+} from './lib/events';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -161,6 +167,17 @@ app.post('/api/transactions', async (c) => {
       price: data.price 
     });
     
+    // Publish TRADE_CREATED event
+    const tradeEvent = createTradeEvent('TRADE_CREATED', {
+      transaction_id: transaction.id,
+      artwork_id: data.artwork_id,
+      from_node_id: data.from_node_id,
+      to_node_id: data.to_node_id,
+      price: data.price,
+      bank_node_id: data.bank_node_id
+    });
+    await globalEventBus.publish(tradeEvent);
+    
     return c.json({ transaction }, 201);
   } catch (error: any) {
     return c.json({ error: error.message }, 400);
@@ -176,6 +193,64 @@ app.patch('/api/transactions/:id/status', async (c) => {
     return c.json({ success: true });
   } catch (error: any) {
     return c.json({ error: error.message }, 400);
+  }
+});
+
+// Analytics Integration API
+app.post('/api/analytics/fair-price', async (c) => {
+  const data = await c.req.json();
+  const analyticsUrl = c.env.ANALYTICS_SERVICE_URL || 'http://localhost:8000';
+  
+  try {
+    const response = await fetch(`${analyticsUrl}/analytics/calculate_fair_price`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      return c.json({ error: error.detail || 'Analytics service error' }, response.status);
+    }
+    
+    const result = await response.json();
+    
+    // Publish PRICE_CALCULATED event
+    const priceEvent = createPriceCalculationEvent({
+      artwork_id: result.asset_id,
+      fair_value: result.fair_value,
+      risk_score: result.risk_score,
+      confidence_interval: result.confidence_interval,
+      reasoning: result.reasoning
+    });
+    await globalEventBus.publish(priceEvent);
+    
+    return c.json(result);
+  } catch (error: any) {
+    return c.json({ error: 'Failed to connect to Analytics Service: ' + error.message }, 503);
+  }
+});
+
+app.post('/api/analytics/risk-score', async (c) => {
+  const data = await c.req.json();
+  const analyticsUrl = c.env.ANALYTICS_SERVICE_URL || 'http://localhost:8000';
+  
+  try {
+    const response = await fetch(`${analyticsUrl}/analytics/risk_score`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      return c.json({ error: error.detail || 'Analytics service error' }, response.status);
+    }
+    
+    const result = await response.json();
+    return c.json(result);
+  } catch (error: any) {
+    return c.json({ error: 'Failed to connect to Analytics Service: ' + error.message }, 503);
   }
 });
 
@@ -218,10 +293,30 @@ app.post('/api/validations', async (c) => {
       artwork_id: data.artwork_id 
     });
     
+    // Publish ASSET_VALIDATED event
+    const validationEvent = createAssetEvent('ASSET_VALIDATED', {
+      artwork_id: data.artwork_id,
+      expert_node_id: data.expert_node_id,
+      validation_result: data.result
+    });
+    await globalEventBus.publish(validationEvent);
+    
     return c.json({ validation }, 201);
   } catch (error: any) {
     return c.json({ error: error.message }, 400);
   }
+});
+
+// Events API (для мониторинга событийной архитектуры)
+app.get('/api/events', async (c) => {
+  const limit = parseInt(c.req.query('limit') || '50');
+  const type = c.req.query('type');
+  
+  const events = type 
+    ? globalEventBus.getEventsByType(type as any, limit)
+    : globalEventBus.getRecentEvents(limit);
+  
+  return c.json({ events, count: events.length });
 });
 
 // Dashboard & Analytics
