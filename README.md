@@ -1,8 +1,38 @@
-# Art Bank Core - Графовая платформа для арт-рынка
+# Art Bank Core - Art-OS: Гибридная платформа для арт-рынка
 
 ## 🎯 Обзор проекта
 
-**Art Bank Core** - это инновационная платформа для арт-рынка, основанная на графовой модели данных с репутационной системой. Каждый участник рынка представлен как узел (Node) в графе с уникальным цифровым паспортом и репутационным весом.
+**Art Bank Core (Art-OS)** - это трёхслойная аналитическая платформа для арт-рынка с графовой моделью данных, событийной архитектурой и математическим ядром для расчёта справедливых цен (Fair Value).
+
+### 🏗️ Архитектура Art-OS (3 слоя)
+
+#### **Слой 1: Графовое Хранилище** 🗄️
+- **Cloudflare D1** (текущая реализация) - SQLite-based графовая БД
+- **Neo4j** (рекомендуется для продакшена) - архивная графовая БД на диске
+- **Memgraph** (рекомендуется для продакшена) - быстрая in-memory графовая БД
+- **Синхронизация**: События через EventBus (упрощённо) / Kafka/RabbitMQ (продакшен)
+
+#### **Слой 2: Core Analytics Service** 🧮
+**Python FastAPI сервис** с математическими алгоритмами:
+- **KDE (Kernel Density Estimation)** - построение тепловой карты цен
+- **NumPy/Pandas** - векторные вычисления
+- **SciPy/scikit-learn** - статистическое моделирование
+- **Входные данные**:
+  - Исторические цены аналогичных активов
+  - Репутационные метрики участников (trust_level)
+  - Контекстные события (выставки, упоминания)
+- **Выходные данные**:
+  - Fair Value (справедливая цена)
+  - Risk Score (коэффициент риска)
+  - Confidence Interval (доверительный интервал)
+  - Обоснование решения
+
+#### **Слой 3: Маршрутизатор** 🚦
+**Hono Framework** (TypeScript):
+- Принимает запросы от пользователей
+- Делегирует Analytics Service для расчётов
+- Контролирует права доступа
+- Обеспечивает шифрование
 
 ### 🌟 Основные концепции
 
@@ -11,6 +41,7 @@
 - **Репутационный вес**: Trust Level (0.0 - 1.0) для каждого участника, влияющий на ценообразование
 - **Провенанс**: Полная история жизни произведения в графе
 - **Автоматическая валидация**: Система выявляет аномалии через анализ графа
+- **Событийная архитектура**: TRADE_CREATED, ASSET_VALIDATED, PRICE_CALCULATED
 
 ## 🚀 Текущий статус
 
@@ -37,16 +68,41 @@
   - Создание транзакций с кредитованием
   - История сделок
   - Обновление владельца при продаже
+  - Публикация событий TRADE_CREATED
   
 - ✅ **Валидация (Validations API)**
   - Экспертная оценка подлинности
   - Оценка состояния
   - Оценка стоимости
+  - Публикация событий ASSET_VALIDATED
   
-- ✅ **Аналитика (Dashboard API)**
+- ✅ **Аналитика (Analytics API)** 🆕
+  - **POST /api/analytics/fair-price** - Расчёт справедливой цены с KDE
+  - **POST /api/analytics/risk-score** - Оценка риска транзакции
+  - Публикация событий PRICE_CALCULATED
+  
+- ✅ **Событийная архитектура (Events API)** 🆕
+  - **GET /api/events** - Просмотр событий системы
+  - EventBus для публикации и подписки
+  - Типы событий: TRADE_CREATED, ASSET_VALIDATED, PRICE_CALCULATED
+  
+- ✅ **Dashboard & Monitoring**
   - Статистика платформы
   - Граф связей
   - История активности
+
+#### Core Analytics Service (Python FastAPI) 🆕
+- ✅ **Fair Price Calculation**
+  - Kernel Density Estimation (KDE) для построения ценовой карты
+  - Учёт репутационных метрик участников
+  - Корректировка на контекстные события
+  - Доверительный интервал (95%)
+  
+- ✅ **Risk Assessment**
+  - Отклонение цены от справедливой
+  - Риск ликвидности
+  - Риск репутации участников
+  - Комбинированная оценка риска
 
 #### Frontend (Responsive Web UI)
 - ✅ **Главная страница (Public Gateway)**
@@ -140,6 +196,13 @@
 - `GET /api/validations` - Получить валидации (опционально: `?artwork_id=xxx` или `?expert_id=xxx`)
 - `POST /api/validations` - Создать валидацию
 
+#### Analytics (Core Analytics Service) 🆕
+- `POST /api/analytics/fair-price` - Расчёт справедливой цены актива
+- `POST /api/analytics/risk-score` - Оценка риска транзакции
+
+#### Events (Event Bus) 🆕
+- `GET /api/events` - Получить события (опционально: `?limit=50&type=TRADE_CREATED`)
+
 #### Dashboard & Analytics
 - `GET /api/dashboard/stats` - Статистика платформы
 - `GET /api/dashboard/graph` - Данные графа
@@ -147,12 +210,22 @@
 
 ## 🛠️ Технический стек
 
-- **Backend**: Hono (v4.12.7) - Lightweight web framework
-- **Database**: Cloudflare D1 (SQLite) - Serverless SQL database
-- **Runtime**: Cloudflare Workers - Edge computing platform
-- **Frontend**: Vanilla JavaScript + TailwindCSS + Chart.js
+### Backend (3-слойная архитектура)
+- **Маршрутизатор**: Hono (v4.12.7) - Lightweight web framework
+- **Analytics Service**: Python FastAPI (v0.115.0) + NumPy + Pandas + SciPy + scikit-learn
+- **Database**: Cloudflare D1 (SQLite) - Serverless SQL database с графовой моделью
+- **Event Bus**: Упрощённый EventBus (в разработке: Kafka/RabbitMQ для продакшена)
+
+### Frontend
+- **Framework**: Vanilla JavaScript + TailwindCSS
+- **Визуализация**: Chart.js (дашборды)
+- **Иконки**: FontAwesome
+
+### Infrastructure
+- **Runtime**: Cloudflare Workers / Node.js (локальная разработка)
 - **Build**: Vite (v6.3.5)
-- **Deployment**: PM2 (development), Cloudflare Pages (production)
+- **Process Manager**: PM2 (для запуска двух сервисов одновременно)
+- **Deployment**: Cloudflare Pages (продакшен), Sandbox (разработка)
 
 ## 📦 Структура проекта
 
@@ -163,12 +236,17 @@ webapp/
 │   ├── types/
 │   │   └── index.ts        # TypeScript type definitions
 │   └── lib/
-│       └── db.ts           # Database helper functions
+│       ├── db.ts           # Database helper functions
+│       └── events.ts       # Event-Driven Architecture (EventBus)
+├── analytics_service/      # 🆕 Python FastAPI Analytics Service
+│   ├── main.py             # FastAPI app with KDE pricing algorithms
+│   ├── requirements.txt    # Python dependencies
+│   └── venv/               # Python virtual environment
 ├── migrations/
 │   └── 0001_initial_schema.sql  # Database schema
 ├── seed.sql                # Test data
 ├── public/                 # Static assets
-├── ecosystem.config.cjs    # PM2 configuration
+├── ecosystem.config.cjs    # PM2 configuration (Hono + FastAPI)
 ├── wrangler.jsonc          # Cloudflare configuration
 ├── package.json            # Dependencies and scripts
 └── README.md               # This file
@@ -311,6 +389,53 @@ curl -X POST https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/n
 
 ```bash
 curl https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/dashboard/stats
+```
+
+### Пример: Расчёт справедливой цены (Analytics Service) 🆕
+
+```bash
+curl -X POST https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/analytics/fair-price \
+  -H "Content-Type: application/json" \
+  -d '{
+    "asset_id": "artwork-1",
+    "current_price": 15000000,
+    "historical_prices": [
+      {"asset_id": "similar-1", "price": 10000000, "sale_date": "2024-01-15", "similarity_score": 0.9},
+      {"asset_id": "similar-2", "price": 13000000, "sale_date": "2024-02-20", "similarity_score": 0.85}
+    ],
+    "trust_metrics": [
+      {"node_id": "artist-1", "node_type": "artist", "trust_level": 0.95, "weight": 0.5},
+      {"node_id": "expert-1", "node_type": "expert", "trust_level": 0.96, "weight": 0.5}
+    ],
+    "context_events": [
+      {"event_type": "exhibition", "impact_score": 0.15, "timestamp": "2024-06-01"}
+    ]
+  }'
+
+# Ответ:
+# {
+#   "asset_id": "artwork-1",
+#   "fair_value": 12406712.21,
+#   "confidence_interval": [6262602.10, 18772517.02],
+#   "risk_score": 0.17,
+#   "reasoning": {
+#     "base_fair_value": 11371871.87,
+#     "trust_adjustment": 1.091,
+#     "context_adjustment": 1.017,
+#     "data_points": 2,
+#     "avg_similarity": 0.875,
+#     "price_dispersion": 0.13,
+#     "trust_level": 0.955
+#   }
+# }
+```
+
+### Пример: Просмотр событий системы 🆕
+
+```bash
+curl https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/events?limit=10
+
+# События: TRADE_CREATED, ASSET_VALIDATED, PRICE_CALCULATED
 ```
 
 ## 🤝 Контрибьюция
