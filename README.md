@@ -43,6 +43,55 @@
 - **Автоматическая валидация**: Система выявляет аномалии через анализ графа
 - **Событийная архитектура**: TRADE_CREATED, ASSET_VALIDATED, PRICE_CALCULATED
 
+### 🛡️ Критические паттерны надёжности 🆕
+
+#### **Circuit Breaker Pattern** (Предохранитель)
+Защита от каскадных сбоев при отказе внешних сервисов:
+- **CLOSED**: Нормальная работа, все запросы проходят
+- **OPEN**: Сервис недоступен, запросы блокируются
+- **HALF_OPEN**: Тестовый режим, проверка восстановления
+- **Конфигурация**: 3 ошибки → OPEN, 2 успеха → CLOSED, таймаут 30 секунд
+- **Мониторинг**: `GET /api/health/circuit-breakers`
+
+#### **Saga Pattern** (Распределённые транзакции)
+Координация многошаговых операций с компенсирующими действиями:
+- **Последовательное выполнение** шагов транзакции
+- **Автоматический откат** при ошибке любого шага
+- **Компенсирующие операции** в обратном порядке
+- **Пример**: Покупка произведения
+  1. Валидация участников
+  2. Резервирование произведения
+  3. Создание транзакции
+  4. Расчёт fair price через Analytics Service
+  5. Перенос владения
+  6. Обновление статуса
+  7. Логирование события
+- **Мониторинг**: `GET /api/saga-logs`
+
+#### **STOP Mechanism** (Экстренное отключение)
+Критический механизм аварийной остановки сервисов:
+- **Emergency Stop**: `POST /api/admin/emergency-stop` - принудительное открытие Circuit Breaker
+- **Recovery**: `POST /api/admin/reset-circuit-breaker` - восстановление после инцидента
+- **Применение**: При обнаружении критических ошибок, атак или повреждении данных
+- **Эффект**: Полная блокировка запросов к сервису до восстановления
+
+#### **Junction Tables** (Many-to-Many связи)
+Реляционные таблицы для сложных связей:
+- `artwork_exhibitions`: Произведение может быть на многих выставках
+- `artwork_artists`: Совместное авторство произведений
+- `artwork_tags`: Категоризация и поиск
+- `media_mentions`: Новости/статьи упоминают произведения/художников
+- `price_history`: История изменения цен
+- `saga_logs`: Лог распределённых транзакций
+
+#### **Media Hub** (Анализ влияния медиа)
+Отслеживание влияния новостей и публикаций на цены:
+- **Типы медиа**: news, article, social, review, auction_result
+- **Sentiment Score**: -1.0 (негативный) до 1.0 (позитивный)
+- **Influence Score**: 0.0-1.0 влияние на рынок
+- **Упоминания**: Связь медиа с произведениями/художниками
+- **API**: `POST /api/media`, `GET /api/media/by-entity`
+
 ## 🚀 Текущий статус
 
 ### ✅ Реализованные функции
@@ -197,6 +246,30 @@
 - `POST /api/validations` - Создать валидацию
 
 #### Analytics (Core Analytics Service) 🆕
+- `POST /api/analytics/fair-price` - Расчёт справедливой цены с KDE
+- `POST /api/analytics/risk-score` - Оценка риска транзакции
+
+#### Events & Monitoring 🆕
+- `GET /api/events` - История событий системы (опционально: `?type=TRADE_CREATED`)
+- `GET /api/health/circuit-breakers` - Состояние Circuit Breakers
+- `GET /api/saga-logs` - Логи Saga транзакций
+
+#### Admin & Emergency Control 🆕
+- `POST /api/admin/emergency-stop` - Экстренная остановка сервиса (STOP механизм)
+- `POST /api/admin/reset-circuit-breaker` - Восстановление Circuit Breaker
+
+#### Media Hub 🆕
+- `POST /api/media` - Создать медиа-элемент (новость, статья)
+- `GET /api/media/by-entity` - Получить медиа по сущности (опционально: `?entity_type=artwork&entity_id=xxx`)
+
+#### Junction Tables (Many-to-Many) 🆕
+- `POST /api/exhibitions` - Добавить выставку
+- `GET /api/artworks/:id/exhibitions` - Получить выставки произведения
+- `GET /api/galleries/:id/exhibitions` - Получить выставки галереи
+- `POST /api/artworks/:id/tags` - Добавить тег к произведению
+- `GET /api/artworks/:id/tags` - Получить теги произведения
+- `GET /api/tags/:id/artworks` - Получить произведения по тегу
+- `GET /api/artworks/:id/price-history` - История цен произведения
 - `POST /api/analytics/fair-price` - Расчёт справедливой цены актива
 - `POST /api/analytics/risk-score` - Оценка риска транзакции
 
@@ -233,17 +306,22 @@
 webapp/
 ├── src/
 │   ├── index.tsx           # Main Hono application (API + Frontend)
+│   ├── circuit-breaker.ts  # 🆕 Circuit Breaker Pattern implementation
+│   ├── saga.ts             # 🆕 Saga Pattern for distributed transactions
 │   ├── types/
 │   │   └── index.ts        # TypeScript type definitions
 │   └── lib/
-│       ├── db.ts           # Database helper functions
-│       └── events.ts       # Event-Driven Architecture (EventBus)
+│       ├── db.ts           # Database helper functions (+ Junction Tables)
+│       ├── events.ts       # Event-Driven Architecture (EventBus)
+│       ├── circuit-breaker.ts  # 🆕 Circuit Breaker utilities
+│       └── saga.ts         # 🆕 Saga utilities
 ├── analytics_service/      # 🆕 Python FastAPI Analytics Service
 │   ├── main.py             # FastAPI app with KDE pricing algorithms
 │   ├── requirements.txt    # Python dependencies
 │   └── venv/               # Python virtual environment
 ├── migrations/
-│   └── 0001_initial_schema.sql  # Database schema
+│   ├── 0001_initial_schema.sql  # Database schema
+│   └── 0002_junction_tables.sql # 🆕 Junction tables, Media Hub, Saga logs
 ├── seed.sql                # Test data
 ├── public/                 # Static assets
 ├── ecosystem.config.cjs    # PM2 configuration (Hono + FastAPI)
@@ -436,6 +514,115 @@ curl -X POST https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/a
 curl https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/events?limit=10
 
 # События: TRADE_CREATED, ASSET_VALIDATED, PRICE_CALCULATED
+```
+
+### Пример: Мониторинг Circuit Breaker 🆕
+
+```bash
+# Проверить состояние Circuit Breakers
+curl https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/health/circuit-breakers
+
+# Ответ:
+# {
+#   "analytics_service": {
+#     "state": "CLOSED",
+#     "failures": 0,
+#     "successes": 12,
+#     "totalRequests": 15,
+#     "totalFailures": 3
+#   },
+#   "timestamp": "2026-03-13T00:18:00Z",
+#   "healthy": true
+# }
+```
+
+### Пример: Emergency STOP mechanism 🆕
+
+```bash
+# Экстренная остановка Analytics Service
+curl -X POST https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/admin/emergency-stop \
+  -H "Content-Type: application/json" \
+  -d '{
+    "service": "analytics",
+    "reason": "Critical database corruption detected"
+  }'
+
+# Ответ:
+# {
+#   "success": true,
+#   "message": "Circuit breaker for analytics has been opened",
+#   "reason": "Critical database corruption detected",
+#   "status": {"state": "OPEN", "failures": 0}
+# }
+
+# Восстановление после инцидента
+curl -X POST https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/admin/reset-circuit-breaker \
+  -H "Content-Type: application/json" \
+  -d '{"service": "analytics"}'
+```
+
+### Пример: Media Hub (влияние новостей) 🆕
+
+```bash
+# Создать новость о рекордной продаже
+curl -X POST https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/media \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "news",
+    "source": "christies",
+    "title": "Рекордная продажа на аукционе Christie'\''s",
+    "content": "Произведение установило новый рекорд категории",
+    "sentiment_score": 0.9,
+    "influence_score": 0.85,
+    "mentions": [
+      {
+        "entity_type": "artwork",
+        "entity_id": "artwork-1",
+        "context": "Рекордная продажа",
+        "relevance": 1.0
+      }
+    ]
+  }'
+
+# Получить медиа упоминания произведения
+curl 'https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/media/by-entity?entity_type=artwork&entity_id=artwork-1'
+```
+
+### Пример: Junction Tables (выставки и теги) 🆕
+
+```bash
+# Добавить выставку
+curl -X POST https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/exhibitions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "artwork_id": "artwork-1",
+    "gallery_node_id": "gallery-1",
+    "exhibition_name": "Русский пейзаж XIX века",
+    "start_date": "2026-01-15T10:00:00Z",
+    "end_date": "2026-03-30T18:00:00Z",
+    "curator": "Анна Иванова"
+  }'
+
+# Добавить теги к произведению
+curl -X POST https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/artworks/artwork-1/tags \
+  -H "Content-Type: application/json" \
+  -d '{"tag_id": "tag-realism", "relevance": 1.0}'
+
+# Получить историю цен
+curl https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/artworks/artwork-1/price-history
+```
+
+### Пример: Saga Logs (мониторинг транзакций) 🆕
+
+```bash
+# Получить логи Saga транзакций
+curl https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/saga-logs?limit=20
+
+# Ответ содержит информацию о статусах транзакций:
+# - running: Транзакция в процессе
+# - completed: Успешно завершена
+# - compensating: Откат изменений
+# - failed: Ошибка транзакции
 ```
 
 ## 🤝 Контрибьюция
