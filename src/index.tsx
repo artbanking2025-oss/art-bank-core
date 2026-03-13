@@ -9,6 +9,8 @@ import {
   createAssetEvent, 
   createPriceCalculationEvent 
 } from './lib/events';
+import { circuitBreakers, CircuitBreakerOpenError } from './lib/circuit-breaker';
+import { createPurchaseSaga } from './lib/saga';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -196,24 +198,93 @@ app.patch('/api/transactions/:id/status', async (c) => {
   }
 });
 
-// Analytics Integration API
+// Saga-based transaction endpoint (с автоматическим откатом при ошибках)
+app.post('/api/transactions/saga', async (c) => {
+  const db = new ArtBankDB(c.env.DB);
+  const data = await c.req.json();
+  
+  try {
+    // Создаём сагу для покупки
+    const saga = createPurchaseSaga({
+      artwork_id: data.artwork_id,
+      buyer_id: data.to_node_id,
+      seller_id: data.from_node_id,
+      price: data.price,
+      bank_id: data.bank_node_id,
+      loan_amount: data.loan_amount,
+      db
+    });
+    
+    // Выполняем сагу
+    const result = await saga.execute();
+    
+    if (result.success) {
+      // Успех - публикуем событие
+      const transaction = result.results.create_transaction;
+      
+      const tradeEvent = createTradeEvent('TRADE_COMPLETED', {
+        transaction_id: transaction.id,
+        artwork_id: data.artwork_id,
+        from_node_id: data.from_node_id,
+        to_node_id: data.to_node_id,
+        price: data.price,
+        bank_node_id: data.bank_node_id
+      });
+      await globalEventBus.publish(tradeEvent);
+      
+      return c.json({
+        success: true,
+        transaction,
+        saga_status: saga.getStatus()
+      }, 201);
+    } else {
+      // Ошибка - сага автоматически откатила изменения
+      const tradeEvent = createTradeEvent('TRADE_CANCELLED', {
+        transaction_id: 0,
+        artwork_id: data.artwork_id,
+        from_node_id: data.from_node_id,
+        to_node_id: data.to_node_id,
+        price: data.price
+      });
+      await globalEventBus.publish(tradeEvent);
+      
+      return c.json({
+        success: false,
+        error: result.error?.message || 'Transaction failed',
+        failed_step: result.failedStep,
+        completed_steps: result.completedSteps,
+        saga_status: saga.getStatus()
+      }, 400);
+    }
+  } catch (error: any) {
+    return c.json({ 
+      success: false,
+      error: error.message 
+    }, 500);
+  }
+});
+
+// Analytics Integration API with Circuit Breaker
 app.post('/api/analytics/fair-price', async (c) => {
   const data = await c.req.json();
   const analyticsUrl = c.env.ANALYTICS_SERVICE_URL || 'http://localhost:8000';
   
   try {
-    const response = await fetch(`${analyticsUrl}/analytics/calculate_fair_price`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+    // Выполнение через Circuit Breaker
+    const result = await circuitBreakers.analyticsService.execute(async () => {
+      const response = await fetch(`${analyticsUrl}/analytics/calculate_fair_price`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Analytics service error');
+      }
+      
+      return await response.json();
     });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      return c.json({ error: error.detail || 'Analytics service error' }, response.status);
-    }
-    
-    const result = await response.json();
     
     // Publish PRICE_CALCULATED event
     const priceEvent = createPriceCalculationEvent({
@@ -226,8 +297,22 @@ app.post('/api/analytics/fair-price', async (c) => {
     await globalEventBus.publish(priceEvent);
     
     return c.json(result);
+    
   } catch (error: any) {
-    return c.json({ error: 'Failed to connect to Analytics Service: ' + error.message }, 503);
+    if (error instanceof CircuitBreakerOpenError) {
+      console.error('[Analytics API] Circuit breaker is OPEN:', error.message);
+      return c.json({ 
+        error: 'Analytics service temporarily unavailable',
+        details: 'Service is experiencing issues. Please try again later.',
+        circuit_breaker_status: 'OPEN'
+      }, 503);
+    }
+    
+    console.error('[Analytics API] Error:', error.message);
+    return c.json({ 
+      error: 'Failed to connect to Analytics Service',
+      details: error.message 
+    }, 503);
   }
 });
 
@@ -236,22 +321,50 @@ app.post('/api/analytics/risk-score', async (c) => {
   const analyticsUrl = c.env.ANALYTICS_SERVICE_URL || 'http://localhost:8000';
   
   try {
-    const response = await fetch(`${analyticsUrl}/analytics/risk_score`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+    // Выполнение через Circuit Breaker
+    const result = await circuitBreakers.analyticsService.execute(async () => {
+      const response = await fetch(`${analyticsUrl}/analytics/risk_score`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Analytics service error');
+      }
+      
+      return await response.json();
     });
     
-    if (!response.ok) {
-      const error = await response.json();
-      return c.json({ error: error.detail || 'Analytics service error' }, response.status);
+    return c.json(result);
+    
+  } catch (error: any) {
+    if (error instanceof CircuitBreakerOpenError) {
+      console.error('[Analytics API] Circuit breaker is OPEN:', error.message);
+      return c.json({ 
+        error: 'Analytics service temporarily unavailable',
+        details: 'Service is experiencing issues. Please try again later.',
+        circuit_breaker_status: 'OPEN'
+      }, 503);
     }
     
-    const result = await response.json();
-    return c.json(result);
-  } catch (error: any) {
-    return c.json({ error: 'Failed to connect to Analytics Service: ' + error.message }, 503);
+    console.error('[Analytics API] Error:', error.message);
+    return c.json({ 
+      error: 'Failed to connect to Analytics Service',
+      details: error.message 
+    }, 503);
   }
+});
+
+// Circuit Breaker Status endpoint
+app.get('/api/analytics/status', (c) => {
+  const stats = circuitBreakers.analyticsService.getStats();
+  return c.json({
+    service: 'Analytics Service',
+    circuit_breaker: stats,
+    health: stats.state === 'CLOSED' ? 'healthy' : 'degraded'
+  });
 });
 
 // Validations API
@@ -317,6 +430,226 @@ app.get('/api/events', async (c) => {
     : globalEventBus.getRecentEvents(limit);
   
   return c.json({ events, count: events.length });
+});
+
+// ========== MEDIA HUB API ==========
+
+// Create media item (news, article, social post)
+app.post('/api/media', async (c) => {
+  const db = new ArtBankDB(c.env.DB);
+  const data = await c.req.json();
+  
+  try {
+    const mediaId = crypto.randomUUID();
+    const mediaItem = await db.createMediaItem({
+      id: mediaId,
+      type: data.type,
+      source: data.source,
+      url: data.url,
+      title: data.title,
+      content: data.content,
+      author: data.author,
+      published_at: data.published_at || new Date().toISOString(),
+      sentiment_score: data.sentiment_score || 0.0,
+      influence_score: data.influence_score || 0.0
+    });
+    
+    // Добавляем упоминания сущностей
+    if (data.mentions && Array.isArray(data.mentions)) {
+      for (const mention of data.mentions) {
+        await db.addMediaMention(
+          mediaId,
+          mention.entity_type,
+          mention.entity_id,
+          mention.context,
+          mention.relevance || 1.0
+        );
+      }
+    }
+    
+    return c.json({ media_item: mediaItem, mentions_added: data.mentions?.length || 0 }, 201);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 400);
+  }
+});
+
+// Get media by entity (artwork, artist, etc.)
+app.get('/api/media/by-entity', async (c) => {
+  const db = new ArtBankDB(c.env.DB);
+  const entityType = c.req.query('entity_type');
+  const entityId = c.req.query('entity_id');
+  
+  if (!entityType || !entityId) {
+    return c.json({ error: 'entity_type and entity_id are required' }, 400);
+  }
+  
+  const media = await db.getMediaByEntity(entityType, entityId);
+  return c.json({ media, count: media.length });
+});
+
+// ========== JUNCTION TABLES API ==========
+
+// Add exhibition
+app.post('/api/exhibitions', async (c) => {
+  const db = new ArtBankDB(c.env.DB);
+  const data = await c.req.json();
+  
+  try {
+    const exhibition = await db.addExhibition(data);
+    return c.json({ exhibition }, 201);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 400);
+  }
+});
+
+// Get exhibitions by artwork
+app.get('/api/artworks/:id/exhibitions', async (c) => {
+  const db = new ArtBankDB(c.env.DB);
+  const artworkId = c.req.param('id');
+  
+  const exhibitions = await db.getExhibitionsByArtwork(artworkId);
+  return c.json({ exhibitions });
+});
+
+// Get exhibitions by gallery
+app.get('/api/galleries/:id/exhibitions', async (c) => {
+  const db = new ArtBankDB(c.env.DB);
+  const galleryId = c.req.param('id');
+  
+  const exhibitions = await db.getExhibitionsByGallery(galleryId);
+  return c.json({ exhibitions });
+});
+
+// Add tags to artwork
+app.post('/api/artworks/:id/tags', async (c) => {
+  const db = new ArtBankDB(c.env.DB);
+  const artworkId = c.req.param('id');
+  const { tag_id, relevance } = await c.req.json();
+  
+  try {
+    await db.addArtworkTag(artworkId, tag_id, relevance);
+    return c.json({ success: true }, 201);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 400);
+  }
+});
+
+// Get artwork tags
+app.get('/api/artworks/:id/tags', async (c) => {
+  const db = new ArtBankDB(c.env.DB);
+  const artworkId = c.req.param('id');
+  
+  const tags = await db.getArtworkTags(artworkId);
+  return c.json({ tags });
+});
+
+// Get artworks by tag
+app.get('/api/tags/:id/artworks', async (c) => {
+  const db = new ArtBankDB(c.env.DB);
+  const tagId = c.req.param('id');
+  
+  const artworks = await db.getArtworksByTag(tagId);
+  return c.json({ artworks });
+});
+
+// Get price history
+app.get('/api/artworks/:id/price-history', async (c) => {
+  const db = new ArtBankDB(c.env.DB);
+  const artworkId = c.req.param('id');
+  const limit = parseInt(c.req.query('limit') || '100');
+  
+  const priceHistory = await db.getPriceHistory(artworkId, limit);
+  return c.json({ price_history: priceHistory });
+});
+
+// Get Saga logs
+app.get('/api/saga-logs', async (c) => {
+  const db = new ArtBankDB(c.env.DB);
+  const limit = parseInt(c.req.query('limit') || '50');
+  
+  const logs = await db.getSagaLogs(limit);
+  return c.json({ saga_logs: logs });
+});
+
+// Circuit Breaker Monitoring API
+app.get('/api/health/circuit-breakers', async (c) => {
+  const stats = {
+    analytics_service: circuitBreakers.analyticsService.getStats(),
+    timestamp: new Date().toISOString(),
+    healthy: circuitBreakers.analyticsService.getStats().state === 'CLOSED'
+  };
+  
+  return c.json(stats);
+});
+
+// STOP Mechanism - Force Circuit Breaker Open (экстренное отключение сервиса)
+app.post('/api/admin/emergency-stop', async (c) => {
+  const { service, reason } = await c.req.json();
+  
+  if (!service || !reason) {
+    return c.json({ 
+      error: 'Service name and reason are required' 
+    }, 400);
+  }
+  
+  try {
+    if (service === 'analytics') {
+      circuitBreakers.analyticsService.forceOpen(reason);
+      
+      // Публикуем системное событие (без логирования в БД)
+      console.warn(`[EMERGENCY STOP] ${service}: ${reason}`);
+      
+      return c.json({
+        success: true,
+        message: `Circuit breaker for ${service} has been opened`,
+        reason,
+        timestamp: new Date().toISOString(),
+        status: circuitBreakers.analyticsService.getStats()
+      });
+    } else {
+      return c.json({ 
+        error: `Unknown service: ${service}` 
+      }, 400);
+    }
+  } catch (error: any) {
+    return c.json({ 
+      error: error.message 
+    }, 500);
+  }
+});
+
+// Reset Circuit Breaker (восстановление после STOP)
+app.post('/api/admin/reset-circuit-breaker', async (c) => {
+  const { service } = await c.req.json();
+  
+  if (!service) {
+    return c.json({ 
+      error: 'Service name is required' 
+    }, 400);
+  }
+  
+  try {
+    if (service === 'analytics') {
+      circuitBreakers.analyticsService.reset();
+      
+      console.log(`[RECOVERY] ${service} circuit breaker reset`);
+      
+      return c.json({
+        success: true,
+        message: `Circuit breaker for ${service} has been reset`,
+        timestamp: new Date().toISOString(),
+        status: circuitBreakers.analyticsService.getStats()
+      });
+    } else {
+      return c.json({ 
+        error: `Unknown service: ${service}` 
+      }, 400);
+    }
+  } catch (error: any) {
+    return c.json({ 
+      error: error.message 
+    }, 500);
+  }
 });
 
 // Dashboard & Analytics

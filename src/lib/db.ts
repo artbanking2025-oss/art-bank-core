@@ -260,4 +260,221 @@ export class ArtBankDB {
     `).bind(nodeId, limit).all();
     return results;
   }
+
+  // ========== JUNCTION TABLES ==========
+
+  // Artwork Exhibitions
+  async addExhibition(data: {
+    artwork_id: string;
+    gallery_node_id: string;
+    exhibition_name: string;
+    start_date?: string;
+    end_date?: string;
+    curator?: string;
+    notes?: string;
+  }): Promise<any> {
+    const result = await this.db.prepare(`
+      INSERT INTO artwork_exhibitions 
+      (artwork_id, gallery_node_id, exhibition_name, start_date, end_date, curator, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      data.artwork_id,
+      data.gallery_node_id,
+      data.exhibition_name,
+      data.start_date || null,
+      data.end_date || null,
+      data.curator || null,
+      data.notes || null
+    ).run();
+
+    return await this.db.prepare('SELECT * FROM artwork_exhibitions WHERE id = ?')
+      .bind(result.meta.last_row_id).first();
+  }
+
+  async getExhibitionsByArtwork(artworkId: string): Promise<any[]> {
+    const { results } = await this.db.prepare(`
+      SELECT e.*, n.name as gallery_name
+      FROM artwork_exhibitions e
+      JOIN nodes n ON e.gallery_node_id = n.id
+      WHERE e.artwork_id = ?
+      ORDER BY e.start_date DESC
+    `).bind(artworkId).all();
+    return results;
+  }
+
+  async getExhibitionsByGallery(galleryId: string): Promise<any[]> {
+    const { results } = await this.db.prepare(`
+      SELECT e.*, a.title as artwork_title
+      FROM artwork_exhibitions e
+      JOIN artworks a ON e.artwork_id = a.id
+      WHERE e.gallery_node_id = ?
+      ORDER BY e.start_date DESC
+    `).bind(galleryId).all();
+    return results;
+  }
+
+  // Artwork Artists (collaborations)
+  async addArtworkArtist(artworkId: string, artistId: string, role: string = 'primary', contribution: number = 100): Promise<void> {
+    await this.db.prepare(`
+      INSERT OR IGNORE INTO artwork_artists 
+      (artwork_id, artist_node_id, role, contribution_percentage)
+      VALUES (?, ?, ?, ?)
+    `).bind(artworkId, artistId, role, contribution).run();
+  }
+
+  async getArtworkArtists(artworkId: string): Promise<any[]> {
+    const { results } = await this.db.prepare(`
+      SELECT aa.*, n.name as artist_name
+      FROM artwork_artists aa
+      JOIN nodes n ON aa.artist_node_id = n.id
+      WHERE aa.artwork_id = ?
+      ORDER BY aa.contribution_percentage DESC
+    `).bind(artworkId).all();
+    return results;
+  }
+
+  // Tags
+  async addTag(id: string, name: string, category: string): Promise<void> {
+    await this.db.prepare(`
+      INSERT OR IGNORE INTO tags (id, name, category)
+      VALUES (?, ?, ?)
+    `).bind(id, name, category).run();
+  }
+
+  async addArtworkTag(artworkId: string, tagId: string, relevance: number = 1.0): Promise<void> {
+    await this.db.prepare(`
+      INSERT OR IGNORE INTO artwork_tags (artwork_id, tag_id, relevance)
+      VALUES (?, ?, ?)
+    `).bind(artworkId, tagId, relevance).run();
+  }
+
+  async getArtworkTags(artworkId: string): Promise<any[]> {
+    const { results } = await this.db.prepare(`
+      SELECT at.*, t.name, t.category
+      FROM artwork_tags at
+      JOIN tags t ON at.tag_id = t.id
+      WHERE at.artwork_id = ?
+      ORDER BY at.relevance DESC
+    `).bind(artworkId).all();
+    return results;
+  }
+
+  async getArtworksByTag(tagId: string): Promise<any[]> {
+    const { results } = await this.db.prepare(`
+      SELECT a.*, at.relevance
+      FROM artworks a
+      JOIN artwork_tags at ON a.id = at.artwork_id
+      WHERE at.tag_id = ?
+      ORDER BY at.relevance DESC
+    `).bind(tagId).all();
+    return results;
+  }
+
+  // Media Items
+  async createMediaItem(data: {
+    id: string;
+    type: string;
+    source?: string;
+    url?: string;
+    title: string;
+    content?: string;
+    author?: string;
+    published_at?: string;
+    sentiment_score?: number;
+    influence_score?: number;
+  }): Promise<any> {
+    await this.db.prepare(`
+      INSERT INTO media_items 
+      (id, type, source, url, title, content, author, published_at, sentiment_score, influence_score)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      data.id,
+      data.type,
+      data.source || null,
+      data.url || null,
+      data.title,
+      data.content || null,
+      data.author || null,
+      data.published_at || null,
+      data.sentiment_score || null,
+      data.influence_score || 0.0
+    ).run();
+
+    return await this.db.prepare('SELECT * FROM media_items WHERE id = ?')
+      .bind(data.id).first();
+  }
+
+  async addMediaMention(mediaItemId: string, entityType: string, entityId: string, context?: string, relevance: number = 1.0): Promise<void> {
+    await this.db.prepare(`
+      INSERT OR IGNORE INTO media_mentions 
+      (media_item_id, entity_type, entity_id, mention_context, relevance)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(mediaItemId, entityType, entityId, context || null, relevance).run();
+  }
+
+  async getMediaByEntity(entityType: string, entityId: string): Promise<any[]> {
+    const { results } = await this.db.prepare(`
+      SELECT m.*, mm.mention_context, mm.relevance
+      FROM media_items m
+      JOIN media_mentions mm ON m.id = mm.media_item_id
+      WHERE mm.entity_type = ? AND mm.entity_id = ?
+      ORDER BY m.published_at DESC
+    `).bind(entityType, entityId).all();
+    return results;
+  }
+
+  // Price History
+  async addPriceHistory(artworkId: string, price: number, source: string, transactionId?: string): Promise<void> {
+    await this.db.prepare(`
+      INSERT INTO price_history (artwork_id, price, source, transaction_id)
+      VALUES (?, ?, ?, ?)
+    `).bind(artworkId, price, source, transactionId || null).run();
+  }
+
+  async getPriceHistory(artworkId: string, limit: number = 100): Promise<any[]> {
+    const { results } = await this.db.prepare(`
+      SELECT * FROM price_history
+      WHERE artwork_id = ?
+      ORDER BY recorded_at DESC
+      LIMIT ?
+    `).bind(artworkId, limit).all();
+    return results;
+  }
+
+  // Saga Logs
+  async createSagaLog(data: {
+    id: string;
+    saga_type: string;
+    status: string;
+    context: any;
+    affected_entities: any[];
+  }): Promise<void> {
+    await this.db.prepare(`
+      INSERT INTO saga_logs (id, saga_type, status, context, affected_entities)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(
+      data.id,
+      data.saga_type,
+      data.status,
+      JSON.stringify(data.context),
+      JSON.stringify(data.affected_entities)
+    ).run();
+  }
+
+  async updateSagaLog(id: string, status: string, errorMessage?: string): Promise<void> {
+    await this.db.prepare(`
+      UPDATE saga_logs 
+      SET status = ?, error_message = ?, completed_at = unixepoch()
+      WHERE id = ?
+    `).bind(status, errorMessage || null, id).run();
+  }
+
+  async getSagaLogs(limit: number = 50): Promise<any[]> {
+    const { results } = await this.db.prepare(`
+      SELECT * FROM saga_logs
+      ORDER BY started_at DESC
+      LIMIT ?
+    `).bind(limit).all();
+    return results;
+  }
 }
