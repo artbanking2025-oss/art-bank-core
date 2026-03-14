@@ -477,4 +477,79 @@ export class ArtBankDB {
     `).bind(limit).all();
     return results;
   }
+
+  // ========== ADDITIONAL METHODS FOR ROLE-SPECIFIC APIs ==========
+
+  async updateNode(id: string, data: Partial<any>): Promise<void> {
+    const updates: string[] = [];
+    const values: any[] = [];
+    
+    if (data.name) {
+      updates.push('name = ?');
+      values.push(data.name);
+    }
+    if (data.jurisdiction) {
+      updates.push('jurisdiction = ?');
+      values.push(data.jurisdiction);
+    }
+    if (data.metadata) {
+      updates.push('metadata = ?');
+      values.push(JSON.stringify(data.metadata));
+    }
+    
+    if (updates.length === 0) return;
+    
+    values.push(id);
+    await this.db.prepare(`
+      UPDATE nodes 
+      SET ${updates.join(', ')}, updated_at = unixepoch()
+      WHERE id = ?
+    `).bind(...values).run();
+  }
+
+  async updateArtwork(id: string, data: Partial<any>): Promise<void> {
+    const updates: string[] = [];
+    const values: any[] = [];
+    
+    if (data.title) {
+      updates.push('title = ?');
+      values.push(data.title);
+    }
+    if (data.style) {
+      updates.push('style = ?');
+      values.push(data.style);
+    }
+    if (data.medium) {
+      updates.push('medium = ?');
+      values.push(data.medium);
+    }
+    
+    if (updates.length === 0) return;
+    
+    values.push(id);
+    await this.db.prepare(`
+      UPDATE artworks 
+      SET ${updates.join(', ')}, updated_at = unixepoch()
+      WHERE id = ?
+    `).bind(...values).run();
+  }
+
+  async getTransactionsByBank(bankId: string): Promise<any[]> {
+    const { results } = await this.db.prepare(`
+      SELECT * FROM transactions 
+      WHERE bank_node_id = ?
+      ORDER BY transaction_date DESC
+    `).bind(bankId).all();
+    return results;
+  }
+
+  async getRecentTransactionsByArtwork(artworkId: string, limit: number = 10): Promise<any[]> {
+    const { results } = await this.db.prepare(`
+      SELECT * FROM transactions 
+      WHERE artwork_id = ?
+      ORDER BY transaction_date DESC
+      LIMIT ?
+    `).bind(artworkId, limit).all();
+    return results;
+  }
 }

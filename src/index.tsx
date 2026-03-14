@@ -12,6 +12,13 @@ import {
 import { circuitBreakers, CircuitBreakerOpenError } from './lib/circuit-breaker';
 import { createPurchaseSaga } from './lib/saga';
 
+// Import role-specific routes
+import artist from './routes/artist';
+import collector from './routes/collector';
+import gallery from './routes/gallery';
+import bank from './routes/bank';
+import expert from './routes/expert';
+
 const app = new Hono<{ Bindings: Env }>();
 
 // Enable CORS for API
@@ -19,6 +26,13 @@ app.use('/api/*', cors());
 
 // Serve static files
 app.use('/static/*', serveStatic({ root: './public' }));
+
+// ========== ROLE-SPECIFIC ROUTES ==========
+app.route('/api/artist', artist);
+app.route('/api/collector', collector);
+app.route('/api/gallery', gallery);
+app.route('/api/bank', bank);
+app.route('/api/expert', expert);
 
 // ========== API ROUTES ==========
 
