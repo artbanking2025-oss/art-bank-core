@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель художника - Art Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-pink-500 to-purple-600 text-white p-6 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold">
+                    <i class="fas fa-palette mr-2"></i>
+                    Панель художника
+                </h1>
+                <p class="text-white/80 mt-1" id="artist-name">Загрузка...</p>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="showCreateArtworkModal()" class="bg-white/20 hover:bg-white/30 px-6 py-2 rounded-lg transition">
+                    <i class="fas fa-plus mr-2"></i>
+                    Создать работу
+                </button>
+                <a href="/" class="bg-white/20 hover:bg-white/30 px-6 py-2 rounded-lg transition">
+                    <i class="fas fa-home mr-2"></i>
+                    На главную
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Всего работ</p>
+                        <p class="text-3xl font-bold text-gray-800" id="total-artworks">0</p>
+                    </div>
+                    <div class="text-4xl text-pink-500">
+                        <i class="fas fa-images"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Продано</p>
+                        <p class="text-3xl font-bold text-gray-800" id="total-sold">0</p>
+                    </div>
+                    <div class="text-4xl text-green-500">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Общая стоимость</p>
+                        <p class="text-2xl font-bold text-gray-800" id="total-value">0 ₽</p>
+                    </div>
+                    <div class="text-4xl text-amber-500">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Репутация</p>
+                        <p class="text-3xl font-bold text-gray-800" id="trust-level">0.0</p>
+                    </div>
+                    <div class="text-4xl text-blue-500">
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-lg shadow mb-8">
+            <div class="border-b">
+                <nav class="flex">
+                    <button onclick="switchTab('artworks')" id="tab-artworks" class="px-6 py-4 text-sm font-medium border-b-2 border-pink-500 text-pink-600">
+                        <i class="fas fa-images mr-2"></i>
+                        Мои работы
+                    </button>
+                    <button onclick="switchTab('exhibitions')" id="tab-exhibitions" class="px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-building mr-2"></i>
+                        Выставки
+                    </button>
+                    <button onclick="switchTab('media')" id="tab-media" class="px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-newspaper mr-2"></i>
+                        Упоминания в СМИ
+                    </button>
+                    <button onclick="switchTab('analytics')" id="tab-analytics" class="px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-chart-line mr-2"></i>
+                        Аналитика
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="p-6">
+                <!-- Artworks Tab -->
+                <div id="content-artworks">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="artworks-list">
+                        <!-- Artworks will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Exhibitions Tab -->
+                <div id="content-exhibitions" class="hidden">
+                    <div id="exhibitions-list">
+                        <!-- Exhibitions will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Media Tab -->
+                <div id="content-media" class="hidden">
+                    <div id="media-list">
+                        <!-- Media mentions will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Analytics Tab -->
+                <div id="content-analytics" class="hidden">
+                    <canvas id="sales-chart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Artwork Modal -->
+    <div id="create-artwork-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b">
+                <h2 class="text-2xl font-bold text-gray-800">
+                    <i class="fas fa-plus-circle mr-2"></i>
+                    Создать новое произведение
+                </h2>
+            </div>
+            
+            <form id="create-artwork-form" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Название</label>
+                    <input type="text" name="title" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Год создания</label>
+                        <input type="number" name="year" min="1800" max="2100" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Стиль</label>
+                        <select name="style" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500">
+                            <option>Реализм</option>
+                            <option>Импрессионизм</option>
+                            <option>Модернизм</option>
+                            <option>Абстракционизм</option>
+                            <option>Экспрессионизм</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Техника</label>
+                        <select name="medium" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500">
+                            <option>Масло</option>
+                            <option>Акварель</option>
+                            <option>Акрил</option>
+                            <option>Графика</option>
+                            <option>Смешанная техника</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Состояние</label>
+                        <select name="condition" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500">
+                            <option>Отличное</option>
+                            <option>Хорошее</option>
+                            <option>Удовлетворительное</option>
+                            <option>Требует реставрации</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Размеры (см)</label>
+                    <input type="text" name="dimensions" placeholder="например: 80x100" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500">
+                </div>
+
+                <div class="flex justify-end gap-4 pt-4">
+                    <button type="button" onclick="hideCreateArtworkModal()" class="px-6 py-2 border rounded-lg hover:bg-gray-50">
+                        Отмена
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600">
+                        <i class="fas fa-save mr-2"></i>
+                        Создать
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+    <script>
+        // Hardcoded artist ID for demo (in production, this would come from authentication)
+        const ARTIST_ID = 'artist-1';
+        let artistDashboard;
+
+        // Initialize dashboard
+        async function init() {
+            artistDashboard = new window.ArtBank.ArtistDashboard(ARTIST_ID);
+            
+            try {
+                await loadProfile();
+                await loadArtworks();
+                await loadAnalytics();
+            } catch (error) {
+                console.error('Failed to initialize dashboard:', error);
+                window.ArtBank.showToast('Ошибка загрузки данных', 'error');
+            }
+        }
+
+        // Load profile
+        async function loadProfile() {
+            const data = await artistDashboard.loadProfile();
+            document.getElementById('artist-name').textContent = data.profile.name;
+            document.getElementById('total-artworks').textContent = data.stats.total_artworks;
+            document.getElementById('trust-level').textContent = data.stats.trust_level.toFixed(2);
+        }
+
+        // Load artworks
+        async function loadArtworks() {
+            const artworks = await artistDashboard.loadArtworks();
+            const container = document.getElementById('artworks-list');
+            
+            if (artworks.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">Пока нет работ. Создайте первое произведение!</p>';
+                return;
+            }
+            
+            container.innerHTML = artworks.map(artwork => `
+                <div class="bg-gray-50 rounded-lg p-6 hover:shadow-lg transition">
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">${artwork.title}</h3>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <p><i class="fas fa-calendar mr-2"></i>${artwork.created_year || 'н/д'}</p>
+                        <p><i class="fas fa-palette mr-2"></i>${artwork.style || 'н/д'}</p>
+                        <p><i class="fas fa-brush mr-2"></i>${artwork.medium || 'н/д'}</p>
+                        ${artwork.current_fpc ? `<p class="text-lg font-bold text-green-600"><i class="fas fa-tag mr-2"></i>${window.ArtBank.formatCurrency(artwork.current_fpc)}</p>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load analytics
+        async function loadAnalytics() {
+            const data = await artistDashboard.loadAnalytics();
+            document.getElementById('total-sold').textContent = data.total_sold;
+            document.getElementById('total-value').textContent = window.ArtBank.formatCurrency(data.total_value);
+        }
+
+        // Tab switching
+        function switchTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('[id^="tab-"]').forEach(btn => {
+                btn.className = 'px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700';
+            });
+            document.getElementById(`tab-${tab}`).className = 'px-6 py-4 text-sm font-medium border-b-2 border-pink-500 text-pink-600';
+            
+            // Update content
+            document.querySelectorAll('[id^="content-"]').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            
+            // Load data for specific tab
+            if (tab === 'exhibitions') loadExhibitions();
+            if (tab === 'media') loadMedia();
+        }
+
+        // Load exhibitions
+        async function loadExhibitions() {
+            const container = document.getElementById('exhibitions-list');
+            container.innerHTML = '<p class="text-gray-500">Загрузка выставок...</p>';
+            
+            try {
+                const response = await window.ArtBank.apiCall(`/artist/exhibitions?artist_id=${ARTIST_ID}`);
+                if (response.exhibitions.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500">Пока нет выставок</p>';
+                } else {
+                    container.innerHTML = response.exhibitions.map(ex => `
+                        <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                            <h3 class="font-bold">${ex.exhibition_name}</h3>
+                            <p class="text-sm text-gray-600">${ex.gallery_name}</p>
+                            <p class="text-sm text-gray-500">${window.ArtBank.formatDate(ex.start_date)} - ${window.ArtBank.formatDate(ex.end_date)}</p>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                container.innerHTML = '<p class="text-red-500">Ошибка загрузки</p>';
+            }
+        }
+
+        // Load media mentions
+        async function loadMedia() {
+            const container = document.getElementById('media-list');
+            container.innerHTML = '<p class="text-gray-500">Загрузка упоминаний...</p>';
+            
+            try {
+                const response = await window.ArtBank.apiCall(`/artist/media?artist_id=${ARTIST_ID}`);
+                if (response.media.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500">Пока нет упоминаний в СМИ</p>';
+                } else {
+                    container.innerHTML = response.media.map(item => `
+                        <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                            <h3 class="font-bold">${item.title}</h3>
+                            <p class="text-sm text-gray-600">${item.source} • ${window.ArtBank.formatDate(item.published_at)}</p>
+                            <p class="text-sm mt-2">${item.content.substring(0, 200)}...</p>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                container.innerHTML = '<p class="text-red-500">Ошибка загрузки</p>';
+            }
+        }
+
+        // Modal controls
+        function showCreateArtworkModal() {
+            document.getElementById('create-artwork-modal').classList.remove('hidden');
+        }
+
+        function hideCreateArtworkModal() {
+            document.getElementById('create-artwork-modal').classList.add('hidden');
+            document.getElementById('create-artwork-form').reset();
+        }
+
+        // Form submission
+        document.getElementById('create-artwork-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = {
+                artist_node_id: ARTIST_ID,
+                title: formData.get('title'),
+                created_year: parseInt(formData.get('year')) || null,
+                style: formData.get('style'),
+                medium: formData.get('medium'),
+                condition: formData.get('condition'),
+                dimensions: formData.get('dimensions'),
+                current_owner_node_id: ARTIST_ID
+            };
+            
+            try {
+                await artistDashboard.createArtwork(data);
+                window.ArtBank.showToast('Произведение успешно создано!', 'success');
+                hideCreateArtworkModal();
+                await loadArtworks();
+                await loadProfile();
+            } catch (error) {
+                window.ArtBank.showToast('Ошибка при создании произведения', 'error');
+            }
+        });
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
