@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель эксперта - Art Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-6 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold">
+                    <i class="fas fa-certificate mr-2"></i>
+                    Панель эксперта
+                </h1>
+                <p class="text-white/80 mt-1" id="expert-name">Загрузка...</p>
+            </div>
+            <div>
+                <a href="/" class="bg-white/20 hover:bg-white/30 px-6 py-2 rounded-lg transition">
+                    <i class="fas fa-home mr-2"></i>
+                    На главную
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Выполнено экспертиз</p>
+                        <p class="text-3xl font-bold text-gray-800" id="total-validations">0</p>
+                    </div>
+                    <div class="text-4xl text-purple-500">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Заявок на экспертизу</p>
+                        <p class="text-3xl font-bold text-gray-800" id="pending-validations">0</p>
+                    </div>
+                    <div class="text-4xl text-amber-500">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Индекс точности</p>
+                        <p class="text-3xl font-bold text-gray-800" id="accuracy-index">0.0%</p>
+                    </div>
+                    <div class="text-4xl text-green-500">
+                        <i class="fas fa-bullseye"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Репутация эксперта</p>
+                        <p class="text-3xl font-bold text-gray-800" id="trust-level">0.0</p>
+                    </div>
+                    <div class="text-4xl text-blue-500">
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-lg shadow mb-8">
+            <div class="border-b">
+                <nav class="flex">
+                    <button onclick="switchTab('requests')" id="tab-requests" class="px-6 py-4 text-sm font-medium border-b-2 border-purple-500 text-purple-600">
+                        <i class="fas fa-inbox mr-2"></i>
+                        Заявки на экспертизу
+                    </button>
+                    <button onclick="switchTab('validations')" id="tab-validations" class="px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-history mr-2"></i>
+                        Мои экспертизы
+                    </button>
+                    <button onclick="switchTab('certificates')" id="tab-certificates" class="px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-certificate mr-2"></i>
+                        Сертификаты
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="p-6">
+                <!-- Requests Tab -->
+                <div id="content-requests">
+                    <div id="requests-list">
+                        <!-- Validation requests will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Validations Tab -->
+                <div id="content-validations" class="hidden">
+                    <div id="validations-list">
+                        <!-- Completed validations will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Certificates Tab -->
+                <div id="content-certificates" class="hidden">
+                    <div id="certificates-list">
+                        <p class="text-gray-500 text-center py-8">Функция в разработке</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Validation Modal -->
+    <div id="validation-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b">
+                <h2 class="text-2xl font-bold text-gray-800">
+                    <i class="fas fa-clipboard-check mr-2"></i>
+                    Проведение экспертизы
+                </h2>
+            </div>
+            
+            <form id="validation-form" class="p-6 space-y-4">
+                <input type="hidden" id="validation-artwork-id">
+                
+                <!-- Artwork Info -->
+                <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                    <h3 class="font-bold text-gray-800 mb-3">
+                        <i class="fas fa-image mr-2"></i>
+                        Объект экспертизы
+                    </h3>
+                    <div id="artwork-info" class="text-sm text-gray-600">
+                        <!-- Artwork info will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Validation Fields -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-check-circle mr-1"></i>
+                        Подлинность
+                    </label>
+                    <select name="is_authentic" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                        <option value="">Выберите...</option>
+                        <option value="true">Подлинное</option>
+                        <option value="false">Подделка</option>
+                        <option value="uncertain">Требуется дополнительная проверка</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-tag mr-1"></i>
+                            Оценочная стоимость (₽)
+                        </label>
+                        <input type="number" name="estimated_value" required 
+                               class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-percentage mr-1"></i>
+                            Уровень уверенности (%)
+                        </label>
+                        <input type="number" name="confidence_level" min="0" max="100" required 
+                               class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-heartbeat mr-1"></i>
+                        Состояние
+                    </label>
+                    <select name="condition" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                        <option value="">Выберите...</option>
+                        <option value="Excellent">Отличное</option>
+                        <option value="Very Good">Очень хорошее</option>
+                        <option value="Good">Хорошее</option>
+                        <option value="Fair">Удовлетворительное</option>
+                        <option value="Poor">Плохое</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-list mr-1"></i>
+                        Примененные методы экспертизы
+                    </label>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="method" value="Visual Examination" class="mr-2">
+                            <span class="text-sm">Визуальный осмотр</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="method" value="UV Analysis" class="mr-2">
+                            <span class="text-sm">УФ-анализ</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="method" value="X-Ray" class="mr-2">
+                            <span class="text-sm">Рентгеновское исследование</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="method" value="Chemical Analysis" class="mr-2">
+                            <span class="text-sm">Химический анализ материалов</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="method" value="Provenance Research" class="mr-2">
+                            <span class="text-sm">Исследование провенанса</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-comment mr-1"></i>
+                        Примечания и выводы
+                    </label>
+                    <textarea name="notes" rows="4" 
+                              class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                              placeholder="Детальное описание результатов экспертизы..."></textarea>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p class="text-sm text-blue-800">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        После публикации экспертное заключение будет записано в граф с вашей цифровой подписью и повлияет на репутационный индекс произведения.
+                    </p>
+                </div>
+
+                <div class="flex justify-end gap-4 pt-4">
+                    <button type="button" onclick="hideValidationModal()" 
+                            class="px-6 py-2 border rounded-lg hover:bg-gray-50">
+                        Отмена
+                    </button>
+                    <button type="submit" 
+                            class="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600">
+                        <i class="fas fa-check mr-2"></i>
+                        Опубликовать заключение
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+    <script>
+        const EXPERT_ID = 'expert-1';
+        let expertDashboard;
+        let currentArtworkId = null;
+
+        async function init() {
+            expertDashboard = new window.ArtBank.ExpertDashboard(EXPERT_ID);
+            
+            try {
+                await loadProfile();
+                await loadRequests();
+            } catch (error) {
+                console.error('Failed to initialize:', error);
+                window.ArtBank.showToast('Ошибка загрузки данных', 'error');
+            }
+        }
+
+        async function loadProfile() {
+            const data = await expertDashboard.loadProfile();
+            document.getElementById('expert-name').textContent = data.profile.name;
+            document.getElementById('total-validations').textContent = data.stats.total_validations;
+            document.getElementById('trust-level').textContent = data.stats.trust_level.toFixed(2);
+            
+            // Calculate accuracy index (mock)
+            const accuracyIndex = data.stats.trust_level * 100;
+            document.getElementById('accuracy-index').textContent = accuracyIndex.toFixed(1) + '%';
+            
+            // Mock pending validations
+            document.getElementById('pending-validations').textContent = Math.floor(Math.random() * 5);
+        }
+
+        async function loadRequests() {
+            // Mock validation requests - in real app would fetch from API
+            const mockRequests = [
+                {
+                    id: 'req-1',
+                    artwork_id: 'artwork-1',
+                    artwork_title: 'Утро в сосновом лесу',
+                    artist: 'Иван Шишкин',
+                    requested_by: 'collector-1',
+                    requested_date: new Date().toISOString(),
+                    urgency: 'normal'
+                }
+            ];
+            
+            const container = document.getElementById('requests-list');
+            
+            if (mockRequests.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">Нет новых заявок на экспертизу</p>';
+                return;
+            }
+            
+            container.innerHTML = mockRequests.map(req => `
+                <div class="bg-gray-50 rounded-lg p-6 mb-4 hover:bg-gray-100 transition">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold text-gray-800 mb-2">
+                                <i class="fas fa-image mr-2"></i>
+                                ${req.artwork_title}
+                            </h3>
+                            <div class="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
+                                <p><i class="fas fa-user mr-2"></i>Художник: ${req.artist}</p>
+                                <p><i class="fas fa-calendar mr-2"></i>Дата заявки: ${window.ArtBank.formatDate(req.requested_date)}</p>
+                                <p><i class="fas fa-id-card mr-2"></i>Заказчик: ${req.requested_by}</p>
+                                <p><i class="fas fa-hashtag mr-2"></i>ID: ${req.artwork_id}</p>
+                            </div>
+                            <button onclick="showValidationModal('${req.artwork_id}', '${req.artwork_title}', '${req.artist}')" 
+                                    class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg transition">
+                                <i class="fas fa-clipboard-check mr-2"></i>
+                                Провести экспертизу
+                            </button>
+                        </div>
+                        <div>
+                            <span class="px-3 py-1 text-xs rounded ${
+                                req.urgency === 'urgent' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
+                            }">
+                                <i class="fas fa-clock mr-1"></i>
+                                ${req.urgency === 'urgent' ? 'Срочно' : 'Обычный'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadValidations() {
+            const data = await expertDashboard.loadValidations();
+            const container = document.getElementById('validations-list');
+            
+            if (data.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">Вы еще не проводили экспертизы</p>';
+                return;
+            }
+            
+            container.innerHTML = data.map(val => `
+                <div class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-6 mb-4 border-2 border-purple-200">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800 mb-2">${val.artwork_id}</h3>
+                            <div class="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                                <p><i class="fas fa-calendar mr-2"></i>${window.ArtBank.formatDate(val.validated_at)}</p>
+                                <p><i class="fas fa-tag mr-2"></i>Оценка: ${window.ArtBank.formatCurrency(val.estimated_value || 0)}</p>
+                                <p><i class="fas fa-percentage mr-2"></i>Уверенность: ${val.confidence_level || 'н/д'}%</p>
+                                <p><i class="fas fa-heartbeat mr-2"></i>Состояние: ${val.condition || 'н/д'}</p>
+                            </div>
+                            ${val.notes ? `<p class="text-sm text-gray-600 mt-2"><i class="fas fa-comment mr-2"></i>${val.notes}</p>` : ''}
+                        </div>
+                        <span class="px-3 py-1 text-xs rounded ${
+                            val.is_authentic === 'true' ? 'bg-green-100 text-green-800' : 
+                            val.is_authentic === 'false' ? 'bg-red-100 text-red-800' : 
+                            'bg-amber-100 text-amber-800'
+                        }">
+                            <i class="fas fa-shield-alt mr-1"></i>
+                            ${val.is_authentic === 'true' ? 'Подлинное' : val.is_authentic === 'false' ? 'Подделка' : 'Проверка'}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showValidationModal(artworkId, title, artist) {
+            currentArtworkId = artworkId;
+            
+            document.getElementById('artwork-info').innerHTML = `
+                <div class="space-y-2">
+                    <p><strong>Название:</strong> ${title}</p>
+                    <p><strong>Художник:</strong> ${artist}</p>
+                    <p><strong>ID:</strong> ${artworkId}</p>
+                </div>
+            `;
+            
+            document.getElementById('validation-artwork-id').value = artworkId;
+            document.getElementById('validation-modal').classList.remove('hidden');
+        }
+
+        function hideValidationModal() {
+            document.getElementById('validation-modal').classList.add('hidden');
+            document.getElementById('validation-form').reset();
+            currentArtworkId = null;
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('[id^="tab-"]').forEach(btn => {
+                btn.className = 'px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700';
+            });
+            document.getElementById(`tab-${tab}`).className = 'px-6 py-4 text-sm font-medium border-b-2 border-purple-500 text-purple-600';
+            
+            document.querySelectorAll('[id^="content-"]').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            
+            if (tab === 'validations') loadValidations();
+        }
+
+        document.getElementById('validation-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            
+            // Collect all selected methods
+            const methods = [];
+            document.querySelectorAll('input[name="method"]:checked').forEach(cb => {
+                methods.push(cb.value);
+            });
+            
+            const data = {
+                artwork_id: document.getElementById('validation-artwork-id').value,
+                expert_node_id: EXPERT_ID,
+                is_authentic: formData.get('is_authentic'),
+                estimated_value: parseFloat(formData.get('estimated_value')),
+                confidence_level: parseInt(formData.get('confidence_level')),
+                condition: formData.get('condition'),
+                validation_method: methods.join(', '),
+                notes: formData.get('notes')
+            };
+            
+            try {
+                await expertDashboard.createValidation(data);
+                window.ArtBank.showToast('Экспертное заключение опубликовано!', 'success');
+                hideValidationModal();
+                await loadProfile();
+                await loadRequests();
+            } catch (error) {
+                console.error('Validation error:', error);
+                window.ArtBank.showToast('Ошибка публикации заключения', 'error');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

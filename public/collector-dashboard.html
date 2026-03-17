@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель коллекционера - Art Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-blue-500 to-cyan-600 text-white p-6 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold">
+                    <i class="fas fa-gem mr-2"></i>
+                    Панель коллекционера
+                </h1>
+                <p class="text-white/80 mt-1" id="collector-name">Загрузка...</p>
+            </div>
+            <div>
+                <a href="/" class="bg-white/20 hover:bg-white/30 px-6 py-2 rounded-lg transition">
+                    <i class="fas fa-home mr-2"></i>
+                    На главную
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Произведений в коллекции</p>
+                        <p class="text-3xl font-bold text-gray-800" id="portfolio-count">0</p>
+                    </div>
+                    <div class="text-4xl text-blue-500">
+                        <i class="fas fa-images"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Стоимость портфеля</p>
+                        <p class="text-2xl font-bold text-gray-800" id="portfolio-value">0 ₽</p>
+                    </div>
+                    <div class="text-4xl text-green-500">
+                        <i class="fas fa-sack-dollar"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Покупок совершено</p>
+                        <p class="text-3xl font-bold text-gray-800" id="total-purchases">0</p>
+                    </div>
+                    <div class="text-4xl text-cyan-500">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Репутация</p>
+                        <p class="text-3xl font-bold text-gray-800" id="trust-level">0.0</p>
+                    </div>
+                    <div class="text-4xl text-amber-500">
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-lg shadow mb-8">
+            <div class="border-b">
+                <nav class="flex">
+                    <button onclick="switchTab('marketplace')" id="tab-marketplace" class="px-6 py-4 text-sm font-medium border-b-2 border-blue-500 text-blue-600">
+                        <i class="fas fa-store mr-2"></i>
+                        Маркетплейс
+                    </button>
+                    <button onclick="switchTab('portfolio')" id="tab-portfolio" class="px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-briefcase mr-2"></i>
+                        Моя коллекция
+                    </button>
+                    <button onclick="switchTab('transactions')" id="tab-transactions" class="px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-history mr-2"></i>
+                        История транзакций
+                    </button>
+                    <button onclick="switchTab('watchlist')" id="tab-watchlist" class="px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-heart mr-2"></i>
+                        Избранное
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="p-6">
+                <!-- Marketplace Tab -->
+                <div id="content-marketplace">
+                    <!-- Filters -->
+                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Стиль</label>
+                                <select id="filter-style" onchange="applyFilters()" class="w-full px-4 py-2 border rounded-lg">
+                                    <option value="">Все стили</option>
+                                    <option>Реализм</option>
+                                    <option>Импрессионизм</option>
+                                    <option>Модернизм</option>
+                                    <option>Абстракционизм</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Макс. цена (₽)</label>
+                                <input type="number" id="filter-price" onchange="applyFilters()" placeholder="Не ограничено" class="w-full px-4 py-2 border rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Художник</label>
+                                <input type="text" id="filter-artist" onchange="applyFilters()" placeholder="Имя художника" class="w-full px-4 py-2 border rounded-lg">
+                            </div>
+                            <div class="flex items-end">
+                                <button onclick="resetFilters()" class="w-full px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg">
+                                    <i class="fas fa-redo mr-2"></i>
+                                    Сбросить
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Marketplace Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="marketplace-list">
+                        <!-- Artworks will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Portfolio Tab -->
+                <div id="content-portfolio" class="hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="portfolio-list">
+                        <!-- Portfolio items will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Transactions Tab -->
+                <div id="content-transactions" class="hidden">
+                    <div id="transactions-list">
+                        <!-- Transactions will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Watchlist Tab -->
+                <div id="content-watchlist" class="hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="watchlist-list">
+                        <p class="text-gray-500 col-span-full text-center py-8">Добавьте произведения в избранное</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchase Modal -->
+    <div id="purchase-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
+            <div class="p-6 border-b">
+                <h2 class="text-2xl font-bold text-gray-800">
+                    <i class="fas fa-shopping-cart mr-2"></i>
+                    Оформление покупки
+                </h2>
+            </div>
+            
+            <div class="p-6">
+                <div id="purchase-artwork-info" class="mb-6">
+                    <!-- Artwork info will be inserted here -->
+                </div>
+
+                <form id="purchase-form" class="space-y-4">
+                    <input type="hidden" id="purchase-artwork-id">
+                    <input type="hidden" id="purchase-seller-id">
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Предложенная цена (₽)</label>
+                        <input type="number" id="purchase-price" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Нужен кредит?</label>
+                        <select id="purchase-bank" class="w-full px-4 py-2 border rounded-lg">
+                            <option value="">Нет, оплата наличными</option>
+                            <option value="bank-1">АртБанк Private</option>
+                        </select>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p class="text-sm text-blue-800">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            После отправки заявки транзакция пройдёт через аналитический модуль для расчёта справедливой цены и оценки рисков.
+                        </p>
+                    </div>
+
+                    <div class="flex justify-end gap-4 pt-4">
+                        <button type="button" onclick="hidePurchaseModal()" class="px-6 py-2 border rounded-lg hover:bg-gray-50">
+                            Отмена
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                            <i class="fas fa-check mr-2"></i>
+                            Отправить заявку
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+    <script>
+        const COLLECTOR_ID = 'collector-1';
+        let collectorDashboard;
+        let marketplaceArtworks = [];
+
+        async function init() {
+            collectorDashboard = new window.ArtBank.CollectorDashboard(COLLECTOR_ID);
+            
+            try {
+                await loadProfile();
+                await loadMarketplace();
+            } catch (error) {
+                console.error('Failed to initialize:', error);
+                window.ArtBank.showToast('Ошибка загрузки данных', 'error');
+            }
+        }
+
+        async function loadProfile() {
+            const data = await collectorDashboard.loadProfile();
+            document.getElementById('collector-name').textContent = data.profile.name;
+            document.getElementById('portfolio-count').textContent = data.portfolio.total_pieces;
+            document.getElementById('portfolio-value').textContent = window.ArtBank.formatCurrency(data.portfolio.total_value);
+            document.getElementById('total-purchases').textContent = data.stats.total_purchases;
+            document.getElementById('trust-level').textContent = data.stats.trust_level.toFixed(2);
+        }
+
+        async function loadMarketplace() {
+            marketplaceArtworks = await collectorDashboard.loadMarketplace();
+            displayMarketplace(marketplaceArtworks);
+        }
+
+        function displayMarketplace(artworks) {
+            const container = document.getElementById('marketplace-list');
+            
+            if (artworks.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 col-span-full text-center py-8">Нет доступных произведений</p>';
+                return;
+            }
+            
+            container.innerHTML = artworks.map(artwork => `
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition">
+                    <div class="h-48 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                        <i class="fas fa-image text-6xl text-gray-400"></i>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">${artwork.title}</h3>
+                        <div class="space-y-2 text-sm text-gray-600 mb-4">
+                            <p><i class="fas fa-user mr-2"></i>${artwork.artist_node_id.substring(0, 15)}...</p>
+                            <p><i class="fas fa-calendar mr-2"></i>${artwork.created_year || 'н/д'}</p>
+                            <p><i class="fas fa-palette mr-2"></i>${artwork.style || 'н/д'}</p>
+                            ${artwork.current_fpc ? `
+                                <p class="text-lg font-bold text-green-600 mt-2">
+                                    <i class="fas fa-tag mr-2"></i>
+                                    ${window.ArtBank.formatCurrency(artwork.current_fpc)}
+                                </p>
+                            ` : ''}
+                        </div>
+                        <button onclick="showPurchaseModal('${artwork.id}', '${artwork.current_owner_node_id}', ${artwork.current_fpc || 0})" 
+                                class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg transition">
+                            <i class="fas fa-shopping-cart mr-2"></i>
+                            Купить
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function applyFilters() {
+            const style = document.getElementById('filter-style').value;
+            const maxPrice = parseFloat(document.getElementById('filter-price').value) || Infinity;
+            
+            const filtered = marketplaceArtworks.filter(artwork => {
+                if (style && artwork.style !== style) return false;
+                const price = artwork.current_fpc || artwork.last_sale_price || 0;
+                if (price > maxPrice) return false;
+                return true;
+            });
+            
+            displayMarketplace(filtered);
+        }
+
+        function resetFilters() {
+            document.getElementById('filter-style').value = '';
+            document.getElementById('filter-price').value = '';
+            document.getElementById('filter-artist').value = '';
+            displayMarketplace(marketplaceArtworks);
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('[id^="tab-"]').forEach(btn => {
+                btn.className = 'px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700';
+            });
+            document.getElementById(`tab-${tab}`).className = 'px-6 py-4 text-sm font-medium border-b-2 border-blue-500 text-blue-600';
+            
+            document.querySelectorAll('[id^="content-"]').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            
+            if (tab === 'portfolio') loadPortfolio();
+            if (tab === 'transactions') loadTransactions();
+        }
+
+        async function loadPortfolio() {
+            const data = await collectorDashboard.loadProfile();
+            const container = document.getElementById('portfolio-list');
+            
+            if (data.portfolio.artworks.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 col-span-full text-center py-8">Коллекция пуста</p>';
+                return;
+            }
+            
+            container.innerHTML = data.portfolio.artworks.map(artwork => `
+                <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-6 border-2 border-blue-200">
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">${artwork.title}</h3>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <p><i class="fas fa-palette mr-2"></i>${artwork.style || 'н/д'}</p>
+                        ${artwork.current_fpc ? `<p class="text-lg font-bold text-green-600"><i class="fas fa-tag mr-2"></i>${window.ArtBank.formatCurrency(artwork.current_fpc)}</p>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadTransactions() {
+            const data = await collectorDashboard.loadProfile();
+            const container = document.getElementById('transactions-list');
+            
+            if (data.transactions.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">Нет транзакций</p>';
+                return;
+            }
+            
+            container.innerHTML = data.transactions.map(t => `
+                <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold">${t.artwork_id}</p>
+                            <p class="text-sm text-gray-600">${window.ArtBank.formatDate(t.transaction_date)}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-lg">${window.ArtBank.formatCurrency(t.price)}</p>
+                            <span class="px-2 py-1 text-xs rounded ${
+                                t.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                t.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-red-100 text-red-800'
+                            }">${t.status}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showPurchaseModal(artworkId, sellerId, price) {
+            const artwork = marketplaceArtworks.find(a => a.id === artworkId);
+            
+            document.getElementById('purchase-artwork-info').innerHTML = `
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h3 class="font-bold text-lg mb-2">${artwork.title}</h3>
+                    <p class="text-sm text-gray-600">Художник: ${artwork.artist_node_id}</p>
+                    <p class="text-sm text-gray-600">Текущая цена: ${window.ArtBank.formatCurrency(price)}</p>
+                </div>
+            `;
+            
+            document.getElementById('purchase-artwork-id').value = artworkId;
+            document.getElementById('purchase-seller-id').value = sellerId;
+            document.getElementById('purchase-price').value = price;
+            document.getElementById('purchase-modal').classList.remove('hidden');
+        }
+
+        function hidePurchaseModal() {
+            document.getElementById('purchase-modal').classList.add('hidden');
+            document.getElementById('purchase-form').reset();
+        }
+
+        document.getElementById('purchase-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                artwork_id: document.getElementById('purchase-artwork-id').value,
+                from_node_id: document.getElementById('purchase-seller-id').value,
+                to_node_id: COLLECTOR_ID,
+                price: parseFloat(document.getElementById('purchase-price').value),
+                bank_node_id: document.getElementById('purchase-bank').value || null
+            };
+            
+            try {
+                await collectorDashboard.initiatePurchase(data);
+                window.ArtBank.showToast('Заявка на покупку отправлена!', 'success');
+                hidePurchaseModal();
+                await loadProfile();
+                await loadMarketplace();
+            } catch (error) {
+                window.ArtBank.showToast('Ошибка при оформлении покупки', 'error');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

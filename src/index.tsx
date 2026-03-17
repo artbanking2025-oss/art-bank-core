@@ -693,19 +693,11 @@ app.get('/', (c) => {
   return c.html(renderLandingPage());
 });
 
-// Role-specific dashboard redirects to static HTML pages
-app.get('/dashboard/artist', (c) => {
-  return c.redirect('/artist-dashboard.html');
-});
-
-// Role-specific dashboards (legacy - for other roles)
+// Role-specific dashboards
 app.get('/dashboard/:role', (c) => {
   const role = c.req.param('role');
   return c.html(renderDashboard(role));
 });
-
-// Serve HTML files from public root (must be at the end)
-app.use('/*', serveStatic({ root: './public' }));
 
 export default app;
 

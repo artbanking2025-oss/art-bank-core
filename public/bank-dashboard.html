@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель банка - Art Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white p-6 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold">
+                    <i class="fas fa-university mr-2"></i>
+                    Панель банка
+                </h1>
+                <p class="text-white/80 mt-1" id="bank-name">Загрузка...</p>
+            </div>
+            <div>
+                <a href="/" class="bg-white/20 hover:bg-white/30 px-6 py-2 rounded-lg transition">
+                    <i class="fas fa-home mr-2"></i>
+                    На главную
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Активные кредиты</p>
+                        <p class="text-3xl font-bold text-gray-800" id="active-credits">0</p>
+                    </div>
+                    <div class="text-4xl text-emerald-500">
+                        <i class="fas fa-hand-holding-usd"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Общий портфель</p>
+                        <p class="text-2xl font-bold text-gray-800" id="portfolio-volume">0 ₽</p>
+                    </div>
+                    <div class="text-4xl text-green-500">
+                        <i class="fas fa-sack-dollar"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Заявки на рассмотрении</p>
+                        <p class="text-3xl font-bold text-gray-800" id="pending-applications">0</p>
+                    </div>
+                    <div class="text-4xl text-amber-500">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Репутация банка</p>
+                        <p class="text-3xl font-bold text-gray-800" id="trust-level">0.0</p>
+                    </div>
+                    <div class="text-4xl text-blue-500">
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-lg shadow mb-8">
+            <div class="border-b">
+                <nav class="flex">
+                    <button onclick="switchTab('applications')" id="tab-applications" class="px-6 py-4 text-sm font-medium border-b-2 border-emerald-500 text-emerald-600">
+                        <i class="fas fa-file-invoice mr-2"></i>
+                        Заявки на кредит
+                    </button>
+                    <button onclick="switchTab('portfolio')" id="tab-portfolio" class="px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-briefcase mr-2"></i>
+                        Кредитный портфель
+                    </button>
+                    <button onclick="switchTab('transactions')" id="tab-transactions" class="px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-history mr-2"></i>
+                        История транзакций
+                    </button>
+                    <button onclick="switchTab('analytics')" id="tab-analytics" class="px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-chart-line mr-2"></i>
+                        Аналитика
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="p-6">
+                <!-- Applications Tab -->
+                <div id="content-applications">
+                    <div id="applications-list">
+                        <!-- Credit applications will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Portfolio Tab -->
+                <div id="content-portfolio" class="hidden">
+                    <div id="portfolio-list">
+                        <!-- Active credits will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Transactions Tab -->
+                <div id="content-transactions" class="hidden">
+                    <div id="transactions-list">
+                        <!-- Transactions will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Analytics Tab -->
+                <div id="content-analytics" class="hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-lg font-bold text-gray-800 mb-4">
+                                <i class="fas fa-chart-pie mr-2"></i>
+                                Распределение рисков
+                            </h3>
+                            <canvas id="risk-chart"></canvas>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-lg font-bold text-gray-800 mb-4">
+                                <i class="fas fa-chart-bar mr-2"></i>
+                                Объём кредитования
+                            </h3>
+                            <canvas id="volume-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Credit Application Detail Modal -->
+    <div id="application-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b">
+                <h2 class="text-2xl font-bold text-gray-800">
+                    <i class="fas fa-file-invoice mr-2"></i>
+                    Заявка на кредит
+                </h2>
+            </div>
+            
+            <div class="p-6" id="application-details">
+                <!-- Application details will be inserted here -->
+            </div>
+
+            <div class="p-6 border-t bg-gray-50">
+                <div class="flex justify-between gap-4">
+                    <button onclick="hideApplicationModal()" class="px-6 py-2 border rounded-lg hover:bg-gray-50">
+                        Закрыть
+                    </button>
+                    <div class="flex gap-4">
+                        <button onclick="rejectApplication()" class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                            <i class="fas fa-times mr-2"></i>
+                            Отклонить
+                        </button>
+                        <button onclick="approveApplication()" class="px-6 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600">
+                            <i class="fas fa-check mr-2"></i>
+                            Одобрить
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+    <script>
+        const BANK_ID = 'bank-1';
+        let bankDashboard;
+        let currentApplicationId = null;
+        let riskChart, volumeChart;
+
+        async function init() {
+            bankDashboard = new window.ArtBank.BankDashboard(BANK_ID);
+            
+            try {
+                await loadProfile();
+                await loadApplications();
+            } catch (error) {
+                console.error('Failed to initialize:', error);
+                window.ArtBank.showToast('Ошибка загрузки данных', 'error');
+            }
+        }
+
+        async function loadProfile() {
+            const data = await bankDashboard.loadProfile();
+            document.getElementById('bank-name').textContent = data.profile.name;
+            document.getElementById('trust-level').textContent = data.stats.trust_level.toFixed(2);
+            
+            // Calculate stats from transactions
+            const pendingCredits = data.transactions.filter(t => t.status === 'pending' && t.bank_node_id === BANK_ID);
+            const activeCredits = data.transactions.filter(t => t.status === 'completed' && t.bank_node_id === BANK_ID);
+            
+            document.getElementById('pending-applications').textContent = pendingCredits.length;
+            document.getElementById('active-credits').textContent = activeCredits.length;
+            
+            const totalVolume = activeCredits.reduce((sum, t) => sum + (t.price || 0), 0);
+            document.getElementById('portfolio-volume').textContent = window.ArtBank.formatCurrency(totalVolume);
+        }
+
+        async function loadApplications() {
+            const data = await bankDashboard.loadProfile();
+            const applications = data.transactions.filter(t => t.status === 'pending' && t.bank_node_id === BANK_ID);
+            const container = document.getElementById('applications-list');
+            
+            if (applications.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">Нет заявок на рассмотрении</p>';
+                return;
+            }
+            
+            container.innerHTML = applications.map(app => `
+                <div class="bg-gray-50 rounded-lg p-6 mb-4 hover:bg-gray-100 transition cursor-pointer" 
+                     onclick="showApplicationDetails('${app.id}')">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold text-gray-800 mb-2">
+                                <i class="fas fa-image mr-2"></i>
+                                ${app.artwork_id}
+                            </h3>
+                            <div class="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                                <p><i class="fas fa-user mr-2"></i>Заёмщик: ${app.from_node_id}</p>
+                                <p><i class="fas fa-calendar mr-2"></i>Дата: ${window.ArtBank.formatDate(app.transaction_date)}</p>
+                                <p><i class="fas fa-tag mr-2"></i>Сумма: ${window.ArtBank.formatCurrency(app.price)}</p>
+                                <p><i class="fas fa-percentage mr-2"></i>Ставка: ${app.interest_rate || 'н/д'}%</p>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="px-3 py-1 text-xs rounded bg-amber-100 text-amber-800">
+                                <i class="fas fa-clock mr-1"></i>
+                                На рассмотрении
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function showApplicationDetails(transactionId) {
+            currentApplicationId = transactionId;
+            const data = await bankDashboard.loadProfile();
+            const app = data.transactions.find(t => t.id === transactionId);
+            
+            if (!app) {
+                window.ArtBank.showToast('Заявка не найдена', 'error');
+                return;
+            }
+
+            // Calculate risk score (simplified)
+            const riskScore = Math.random() * 0.3 + 0.1; // 0.1-0.4
+            const trustScore = Math.random() * 0.3 + 0.6; // 0.6-0.9
+            const recommendation = riskScore < 0.25 ? 'Рекомендуется одобрить' : 'Требуется дополнительная проверка';
+            
+            document.getElementById('application-details').innerHTML = `
+                <div class="space-y-6">
+                    <!-- Borrower Info -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h3 class="font-bold text-gray-800 mb-3">
+                            <i class="fas fa-user mr-2"></i>
+                            Информация о заёмщике
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <p><strong>ID:</strong> ${app.from_node_id}</p>
+                            <p><strong>Тип:</strong> Коллекционер</p>
+                            <p><strong>Уровень доверия:</strong> ${trustScore.toFixed(2)}</p>
+                            <p><strong>Предыдущие сделки:</strong> ${Math.floor(Math.random() * 10)}</p>
+                        </div>
+                    </div>
+
+                    <!-- Artwork Info -->
+                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                        <h3 class="font-bold text-gray-800 mb-3">
+                            <i class="fas fa-image mr-2"></i>
+                            Информация о произведении
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <p><strong>ID:</strong> ${app.artwork_id}</p>
+                            <p><strong>Запрашиваемая сумма:</strong> ${window.ArtBank.formatCurrency(app.price)}</p>
+                            <p><strong>Оценочная стоимость:</strong> ${window.ArtBank.formatCurrency(app.price * 1.15)}</p>
+                            <p><strong>LTV:</strong> ${(app.price / (app.price * 1.15) * 100).toFixed(1)}%</p>
+                        </div>
+                    </div>
+
+                    <!-- Risk Analysis -->
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <h3 class="font-bold text-gray-800 mb-3">
+                            <i class="fas fa-chart-line mr-2"></i>
+                            Оценка рисков (AI)
+                        </h3>
+                        <div class="space-y-3">
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Кредитный риск</span>
+                                    <span class="font-bold ${riskScore < 0.25 ? 'text-green-600' : 'text-amber-600'}">${(riskScore * 100).toFixed(1)}%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="h-2 rounded-full ${riskScore < 0.25 ? 'bg-green-500' : 'bg-amber-500'}" 
+                                         style="width: ${riskScore * 100}%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Оценка ликвидности актива</span>
+                                    <span class="font-bold text-green-600">${(trustScore * 100).toFixed(1)}%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: ${trustScore * 100}%"></div>
+                                </div>
+                            </div>
+                            <div class="mt-4 p-3 rounded-lg ${riskScore < 0.25 ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">
+                                <strong><i class="fas fa-lightbulb mr-2"></i>Рекомендация:</strong> ${recommendation}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transaction Details -->
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <h3 class="font-bold text-gray-800 mb-3">
+                            <i class="fas fa-file-contract mr-2"></i>
+                            Условия кредита
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <p><strong>Сумма кредита:</strong> ${window.ArtBank.formatCurrency(app.price)}</p>
+                            <p><strong>Процентная ставка:</strong> ${app.interest_rate || 12}% годовых</p>
+                            <p><strong>Срок:</strong> ${app.loan_term || 12} месяцев</p>
+                            <p><strong>Залог:</strong> ${app.artwork_id}</p>
+                            <p><strong>Дата подачи:</strong> ${window.ArtBank.formatDate(app.transaction_date)}</p>
+                            <p><strong>Статус:</strong> <span class="px-2 py-1 rounded bg-amber-100 text-amber-800">Pending</span></p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('application-modal').classList.remove('hidden');
+        }
+
+        function hideApplicationModal() {
+            document.getElementById('application-modal').classList.add('hidden');
+            currentApplicationId = null;
+        }
+
+        async function approveApplication() {
+            if (!currentApplicationId) return;
+            
+            try {
+                await bankDashboard.approveCredit(currentApplicationId);
+                window.ArtBank.showToast('Заявка одобрена!', 'success');
+                hideApplicationModal();
+                await loadProfile();
+                await loadApplications();
+            } catch (error) {
+                window.ArtBank.showToast('Ошибка одобрения заявки', 'error');
+            }
+        }
+
+        async function rejectApplication() {
+            if (!currentApplicationId) return;
+            
+            if (!confirm('Вы уверены, что хотите отклонить эту заявку?')) {
+                return;
+            }
+            
+            try {
+                // In real app, would call reject endpoint
+                window.ArtBank.showToast('Заявка отклонена', 'success');
+                hideApplicationModal();
+                await loadProfile();
+                await loadApplications();
+            } catch (error) {
+                window.ArtBank.showToast('Ошибка отклонения заявки', 'error');
+            }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('[id^="tab-"]').forEach(btn => {
+                btn.className = 'px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700';
+            });
+            document.getElementById(`tab-${tab}`).className = 'px-6 py-4 text-sm font-medium border-b-2 border-emerald-500 text-emerald-600';
+            
+            document.querySelectorAll('[id^="content-"]').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            
+            if (tab === 'portfolio') loadPortfolio();
+            if (tab === 'transactions') loadTransactions();
+            if (tab === 'analytics') loadAnalytics();
+        }
+
+        async function loadPortfolio() {
+            const data = await bankDashboard.loadProfile();
+            const activeCredits = data.transactions.filter(t => t.status === 'completed' && t.bank_node_id === BANK_ID);
+            const container = document.getElementById('portfolio-list');
+            
+            if (activeCredits.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">Нет активных кредитов</p>';
+                return;
+            }
+            
+            container.innerHTML = activeCredits.map(credit => `
+                <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg p-6 mb-4 border-2 border-emerald-200">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800 mb-2">${credit.artwork_id}</h3>
+                            <div class="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                                <p><i class="fas fa-user mr-2"></i>${credit.from_node_id}</p>
+                                <p><i class="fas fa-calendar mr-2"></i>${window.ArtBank.formatDate(credit.transaction_date)}</p>
+                                <p><i class="fas fa-tag mr-2"></i>${window.ArtBank.formatCurrency(credit.price)}</p>
+                                <p><i class="fas fa-percentage mr-2"></i>${credit.interest_rate || 12}% годовых</p>
+                            </div>
+                        </div>
+                        <span class="px-3 py-1 text-xs rounded bg-green-100 text-green-800">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            Активен
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadTransactions() {
+            const data = await bankDashboard.loadProfile();
+            const allTransactions = data.transactions.filter(t => t.bank_node_id === BANK_ID);
+            const container = document.getElementById('transactions-list');
+            
+            if (allTransactions.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">Нет транзакций</p>';
+                return;
+            }
+            
+            container.innerHTML = allTransactions.map(t => `
+                <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold">${t.artwork_id}</p>
+                            <p class="text-sm text-gray-600">${window.ArtBank.formatDate(t.transaction_date)}</p>
+                            <p class="text-sm text-gray-600">Заёмщик: ${t.from_node_id}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-lg">${window.ArtBank.formatCurrency(t.price)}</p>
+                            <span class="px-2 py-1 text-xs rounded ${
+                                t.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                t.status === 'pending' ? 'bg-amber-100 text-amber-800' :
+                                'bg-red-100 text-red-800'
+                            }">${t.status}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadAnalytics() {
+            // Risk Distribution Chart
+            const riskCtx = document.getElementById('risk-chart').getContext('2d');
+            if (riskChart) riskChart.destroy();
+            riskChart = new Chart(riskCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Низкий риск', 'Средний риск', 'Высокий риск'],
+                    datasets: [{
+                        data: [65, 25, 10],
+                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Volume Chart
+            const volumeCtx = document.getElementById('volume-chart').getContext('2d');
+            if (volumeChart) volumeChart.destroy();
+            volumeChart = new Chart(volumeCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн'],
+                    datasets: [{
+                        label: 'Объём кредитования (млн ₽)',
+                        data: [12, 19, 15, 25, 22, 30],
+                        backgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
