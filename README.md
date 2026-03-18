@@ -98,6 +98,62 @@
 
 #### Backend API (Hono + Cloudflare D1)
 - ✅ **Управление узлами (Nodes API)**
+  - Создание участников (artist, collector, gallery, bank, expert)
+  - Получение узлов по типу/ID
+  - Обновление репутационных весов (trust_level)
+  
+- ✅ **Управление рёбрами (Edges API)**
+  - Создание связей между узлами
+  - Получение связей узла
+  - Расчёт весов рёбер на основе репутации
+  
+- ✅ **Управление произведениями (Artworks API)**
+  - Создание произведений с цифровой подписью
+  - Привязка к художнику и владельцу
+  - Отслеживание провенанса (история владения)
+  - **Fair Price Corridor** расчёт справедливого коридора цены
+  
+- ✅ **Транзакции (Transactions API)**
+  - Создание сделок с кредитованием
+  - История сделок по произведению
+  - Автоматическое обновление владельца при продаже
+  - Эмиссия событий TRADE_CREATED
+  
+- ✅ **Валидации (Validations API)**
+  - Экспертные заключения (authenticity, condition, valuation)
+  - Привязка к эксперту и произведению
+  - Эмиссия событий ASSET_VALIDATED
+
+- ✅ **🆕 Analytics Extended API** (Новые математические модели)
+  - **POST /api/analytics-extended/price-corridor**
+    - Расчёт **Единого Коридора Платформы**
+    - **Gallery Median (M_gal)**: Средняя цена офферов верифицированных галерей
+    - **Sales Median (M_sales)**: Средняя цена реальных сделок
+    - **Spread**: Разрыв ликвидности между предложениями и продажами
+    - **Corridor Bounds**: Границы коридора (±σ стандартное отклонение)
+    - **Position Analysis**: Позиция текущей цены (undervalued/center/overvalued)
+    - **Growth Potential**: Потенциал роста до медианы
+    - **Liquidity Rating**: Оценка ликвидности (high/medium/low)
+  
+  - **POST /api/analytics-extended/market-factors**
+    - Расчёт **трёх факторов-"нитей" рыночного давления**
+    - **F1: Институциональная подпорка** (Institutional Support)
+      - Вес: на основе валидаций, выставок, provenance score
+      - Интерпретация: Very Strong / Strong / Moderate / Weak / Very Weak
+    - **F2: Рыночный ажиотаж** (Market Hype)
+      - Вес: на основе медиа-упоминаний, sentiment, influence
+      - Показывает спекулятивное давление
+    - **F3: Ликвидность** (Liquidity)
+      - Вес: на основе количества транзакций и недавности продаж
+      - Скорость конвертации в деньги
+    - **Stability Score**: Общая оценка стабильности (0.0-1.0)
+    - **Investment Recommendation**: 
+      - Blue Chip (институциональная поддержка)
+      - Balanced (сбалансированный риск)
+      - Speculative (спекулятивный, высокий хайп)
+      - High Risk (низкая стабильность)
+  
+- ✅ **Analytics API** (Core Python FastAPI)
   - Создание узлов всех типов (artist, collector, gallery, bank, expert)
   - Получение узлов по типу и ID
   - Обновление репутационного веса
@@ -196,6 +252,23 @@
     * История выполненных экспертиз
     * Сертификаты (в разработке)
   
+  - ✅ **🆕 Analytics Dashboard** (/dashboard/analytics) **НОВИНКА v2.1**
+    * **Выбор произведения** для анализа с фильтрацией по периоду
+    * **Единый коридор платформы** - 2D визуализация:
+      - Текущая цена актива
+      - Медиана галерей (M_gal) - средняя цена офферов
+      - Медиана сделок (M_sales) - реальные продажи
+      - Spread - разрыв ликвидности (%)
+      - Corridor Bounds - границы коридора (±σ)
+    * **Три фактора-"нити" рыночного давления**:
+      - F1: Институциональная подпорка (validations + exhibitions)
+      - F2: Рыночный ажиотаж (media mentions + sentiment)
+      - F3: Ликвидность (transactions + recency)
+    * **Stability Score** - общая оценка стабильности (0.0-1.0)
+    * **Investment Recommendation** - рекомендация (Blue Chip / Balanced / Speculative / High Risk)
+    * **Interactive Chart.js визуализация** коридора цены
+    * **Responsive design** с Tailwind CSS
+  
   - ✅ **Public View** (/dashboard/public)
     * Граф рынка
     * Статистика платформы
@@ -253,6 +326,7 @@
 - **Dashboard Gallery**: https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/dashboard/gallery
 - **Dashboard Bank**: https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/dashboard/bank
 - **Dashboard Expert**: https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/dashboard/expert
+- **🆕 Dashboard Analytics**: https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/dashboard/analytics
 - **Public View**: https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/dashboard/public
 
 ### API Endpoints
