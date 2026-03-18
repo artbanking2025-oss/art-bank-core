@@ -11,6 +11,7 @@ import {
 } from './lib/events';
 import { circuitBreakers, CircuitBreakerOpenError } from './lib/circuit-breaker';
 import { createPurchaseSaga } from './lib/saga';
+import { renderAnalyticsDashboard } from './analytics-dashboard-render';
 
 // Import role-specific routes
 import artist from './routes/artist';
@@ -18,6 +19,7 @@ import collector from './routes/collector';
 import gallery from './routes/gallery';
 import bank from './routes/bank';
 import expert from './routes/expert';
+import analyticsExtended from './routes/analytics-extended';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -33,6 +35,9 @@ app.route('/api/collector', collector);
 app.route('/api/gallery', gallery);
 app.route('/api/bank', bank);
 app.route('/api/expert', expert);
+
+// ========== ANALYTICS EXTENDED ROUTES ==========
+app.route('/api/analytics-extended', analyticsExtended);
 
 // ========== API ROUTES ==========
 
@@ -691,6 +696,11 @@ app.get('/api/nodes/:id/activity', async (c) => {
 // Main landing page with role selection
 app.get('/', (c) => {
   return c.html(renderLandingPage());
+});
+
+// Analytics Dashboard (redirect to static file)
+app.get('/dashboard/analytics', (c) => {
+  return c.html(renderAnalyticsDashboard());
 });
 
 // Role-specific dashboards

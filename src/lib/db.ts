@@ -552,4 +552,54 @@ export class ArtBankDB {
     `).bind(artworkId, limit).all();
     return results;
   }
+
+  // ========== ANALYTICS EXTENDED METHODS ==========
+
+  /**
+   * Get segment data for artwork (similar artworks by style/artist/period)
+   * Used for calculating price corridors
+   */
+  async getArtworkSegmentData(artworkId: string): Promise<{
+    similar_artworks: any[];
+    average_price: number;
+    price_range: { min: number; max: number };
+  }> {
+    const artwork = await this.getArtwork(artworkId);
+    if (!artwork) {
+      return { similar_artworks: [], average_price: 0, price_range: { min: 0, max: 0 } };
+    }
+
+    // Find similar artworks by style and artist
+    const { results } = await this.db.prepare(`
+      SELECT a.*, 
+             ph.price as ask_price,
+             t.price as last_sale_price
+      FROM artworks a
+      LEFT JOIN price_history ph ON a.id = ph.artwork_id
+      LEFT JOIN transactions t ON a.id = t.artwork_id AND t.status = 'completed'
+      WHERE (a.style = ? OR a.artist_node_id = ?)
+        AND a.id != ?
+      ORDER BY a.created_at DESC
+      LIMIT 50
+    `).bind(artwork.style || '', artwork.artist_node_id || '', artworkId).all();
+
+    const prices = results
+      .map((a: any) => a.current_fpc || a.ask_price || a.last_sale_price)
+      .filter((p: number) => p > 0);
+
+    const average_price = prices.length > 0
+      ? prices.reduce((sum: number, p: number) => sum + p, 0) / prices.length
+      : 0;
+
+    const price_range = {
+      min: prices.length > 0 ? Math.min(...prices) : 0,
+      max: prices.length > 0 ? Math.max(...prices) : 0
+    };
+
+    return {
+      similar_artworks: results,
+      average_price,
+      price_range
+    };
+  }
 }
