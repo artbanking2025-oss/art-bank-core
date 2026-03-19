@@ -711,6 +711,11 @@ app.get('/dashboard/analytics', (c) => {
   return c.html(renderAnalyticsDashboard());
 });
 
+// 3D Visualization Dashboard (redirect to static file)
+app.get('/dashboard/3d-visualization', (c) => {
+  return c.redirect('/static/3d-visualization.html');
+});
+
 // Role-specific dashboards
 app.get('/dashboard/:role', (c) => {
   const role = c.req.param('role');

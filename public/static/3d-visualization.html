@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Market Pressure - Art Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <style>
+        #canvas3d {
+            width: 100%;
+            height: 600px;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen">
+    <header class="bg-white shadow-md border-b-4 border-indigo-500">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <i class="fas fa-cube text-indigo-600 text-3xl"></i>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">3D Market Pressure Visualization</h1>
+                    <p class="text-sm text-gray-600">Визуализация трёх факторов давления рынка</p>
+                </div>
+            </div>
+            <a href="/" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                <i class="fas fa-home mr-2"></i> На главную
+            </a>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-6 py-8">
+        <!-- Controls -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-sliders-h mr-2 text-indigo-600"></i>
+                Управление визуализацией
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Произведение</label>
+                    <select id="artworkSelect" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                        <option value="">Выберите...</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Вращение</label>
+                    <button id="rotateBtn" class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                        <i class="fas fa-sync-alt mr-2"></i> Старт
+                    </button>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Камера</label>
+                    <button id="resetBtn" class="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                        <i class="fas fa-undo mr-2"></i> Сброс
+                    </button>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Анализ</label>
+                    <button id="analyzeBtn" class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                        <i class="fas fa-chart-line mr-2"></i> Построить
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3D Canvas -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-cube mr-2 text-indigo-600"></i>
+                3D Модель рыночного давления
+            </h2>
+            <div id="canvas3d"></div>
+        </div>
+
+        <!-- Factor Legend -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold">Ось X: F1 Institutional</h3>
+                    <i class="fas fa-university text-3xl opacity-50"></i>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span>Текущее значение:</span>
+                        <span class="font-bold" id="f1Value">—</span>
+                    </div>
+                    <div class="text-sm opacity-90">
+                        Валидации, выставки, provenance
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold">Ось Y: F2 Hype</h3>
+                    <i class="fas fa-fire text-3xl opacity-50"></i>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span>Текущее значение:</span>
+                        <span class="font-bold" id="f2Value">—</span>
+                    </div>
+                    <div class="text-sm opacity-90">
+                        Медиа-упоминания, sentiment
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold">Ось Z: F3 Liquidity</h3>
+                    <i class="fas fa-water text-3xl opacity-50"></i>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span>Текущее значение:</span>
+                        <span class="font-bold" id="f3Value">—</span>
+                    </div>
+                    <div class="text-sm opacity-90">
+                        Транзакции, последняя продажа
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let scene, camera, renderer, sphere, axes;
+        let rotating = false;
+        let currentData = null;
+
+        // Initialize Three.js scene
+        function initScene() {
+            const container = document.getElementById('canvas3d');
+            
+            // Scene
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x1e293b, 10, 50);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(
+                75,
+                container.clientWidth / container.clientHeight,
+                0.1,
+                1000
+            );
+            camera.position.z = 5;
+            camera.position.y = 2;
+            camera.lookAt(0, 0, 0);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setClearColor(0x1e293b);
+            container.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0xffffff, 0.8);
+            pointLight.position.set(5, 5, 5);
+            scene.add(pointLight);
+
+            // Axes helper
+            axes = new THREE.AxesHelper(3);
+            scene.add(axes);
+
+            // Grid
+            const gridHelper = new THREE.GridHelper(10, 10, 0x4f46e5, 0x2d3748);
+            scene.add(gridHelper);
+
+            // Initial sphere (placeholder)
+            createMarketSphere(0.5, 0.5, 0.5);
+
+            // Animation loop
+            animate();
+        }
+
+        function createMarketSphere(f1, f2, f3) {
+            // Remove old sphere
+            if (sphere) scene.remove(sphere);
+
+            // Calculate position based on factors
+            const x = (f1 - 0.5) * 4;  // -2 to 2
+            const y = (f2 - 0.5) * 4;
+            const z = (f3 - 0.5) * 4;
+
+            // Sphere size based on overall strength
+            const strength = (f1 + f2 + f3) / 3;
+            const radius = 0.3 + strength * 0.5;
+
+            // Color based on factors
+            const color = new THREE.Color();
+            color.setRGB(f2, f1, f3);  // Red=hype, Green=institutional, Blue=liquidity
+
+            const geometry = new THREE.SphereGeometry(radius, 32, 32);
+            const material = new THREE.MeshPhongMaterial({
+                color: color,
+                emissive: color,
+                emissiveIntensity: 0.3,
+                shininess: 100
+            });
+
+            sphere = new THREE.Mesh(geometry, material);
+            sphere.position.set(x, y, z);
+            scene.add(sphere);
+
+            // Add glow effect
+            const glowGeometry = new THREE.SphereGeometry(radius * 1.2, 32, 32);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.3
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            glow.position.set(x, y, z);
+            scene.add(glow);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (rotating && sphere) {
+                camera.position.x = Math.cos(Date.now() * 0.001) * 5;
+                camera.position.z = Math.sin(Date.now() * 0.001) * 5;
+                camera.lookAt(0, 0, 0);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Load artworks
+        async function loadArtworks() {
+            try {
+                const response = await axios.get('/api/artworks');
+                const select = document.getElementById('artworkSelect');
+                response.data.artworks.forEach(a => {
+                    const option = document.createElement('option');
+                    option.value = a.id;
+                    option.textContent = a.title;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Analyze artwork
+        document.getElementById('analyzeBtn').addEventListener('click', async () => {
+            const artworkId = document.getElementById('artworkSelect').value;
+            if (!artworkId) {
+                alert('Выберите произведение');
+                return;
+            }
+
+            try {
+                const response = await axios.post('/api/analytics-extended/market-factors', {
+                    artwork_id: artworkId
+                });
+
+                currentData = response.data;
+                const factors = currentData.factors;
+
+                // Update 3D visualization
+                createMarketSphere(
+                    factors.f1_institutional_support.weight,
+                    factors.f2_market_hype.weight,
+                    factors.f3_liquidity.weight
+                );
+
+                // Update UI
+                document.getElementById('f1Value').textContent = factors.f1_institutional_support.weight.toFixed(2);
+                document.getElementById('f2Value').textContent = factors.f2_market_hype.weight.toFixed(2);
+                document.getElementById('f3Value').textContent = factors.f3_liquidity.weight.toFixed(2);
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Ошибка анализа');
+            }
+        });
+
+        // Rotation control
+        document.getElementById('rotateBtn').addEventListener('click', () => {
+            rotating = !rotating;
+            const btn = document.getElementById('rotateBtn');
+            btn.innerHTML = rotating 
+                ? '<i class="fas fa-pause mr-2"></i> Стоп'
+                : '<i class="fas fa-sync-alt mr-2"></i> Старт';
+        });
+
+        // Reset camera
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            rotating = false;
+            camera.position.set(0, 2, 5);
+            camera.lookAt(0, 0, 0);
+        });
+
+        // Initialize
+        initScene();
+        loadArtworks();
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            const container = document.getElementById('canvas3d');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+    </script>
+</body>
+</html>
