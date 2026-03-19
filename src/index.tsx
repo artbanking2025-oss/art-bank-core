@@ -21,6 +21,7 @@ import bank from './routes/bank';
 import expert from './routes/expert';
 import analyticsExtended from './routes/analytics-extended';
 import mediaHub from './routes/media-hub';
+import graphSegmentation from './routes/graph-segmentation';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -42,6 +43,9 @@ app.route('/api/analytics-extended', analyticsExtended);
 
 // ========== MEDIA HUB ROUTES ==========
 app.route('/api/media-hub', mediaHub);
+
+// ========== GRAPH SEGMENTATION ROUTES ==========
+app.route('/api/graph-segmentation', graphSegmentation);
 
 // ========== API ROUTES ==========
 
