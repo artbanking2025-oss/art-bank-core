@@ -20,6 +20,7 @@ import gallery from './routes/gallery';
 import bank from './routes/bank';
 import expert from './routes/expert';
 import analyticsExtended from './routes/analytics-extended';
+import mediaHub from './routes/media-hub';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -38,6 +39,9 @@ app.route('/api/expert', expert);
 
 // ========== ANALYTICS EXTENDED ROUTES ==========
 app.route('/api/analytics-extended', analyticsExtended);
+
+// ========== MEDIA HUB ROUTES ==========
+app.route('/api/media-hub', mediaHub);
 
 // ========== API ROUTES ==========
 
