@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Hub Dashboard - Art Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-rose-50 via-orange-50 to-amber-50 min-h-screen">
+    <header class="bg-white shadow-md border-b-4 border-rose-500">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <i class="fas fa-newspaper text-rose-600 text-3xl"></i>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Media Hub Dashboard</h1>
+                    <p class="text-sm text-gray-600">Анализ медиа-влияния на арт-рынок</p>
+                </div>
+            </div>
+            <a href="/" class="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition">
+                <i class="fas fa-home mr-2"></i> На главную
+            </a>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-6 py-8">
+        <!-- Trending Artworks -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-fire mr-2 text-rose-600"></i>
+                Trending Artworks (последние 7 дней)
+            </h2>
+            <div id="trendingContainer" class="space-y-4">
+                <div class="text-center py-8">
+                    <i class="fas fa-spinner fa-spin text-4xl text-gray-400"></i>
+                    <p class="text-gray-500 mt-2">Загрузка...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analyze Media Form -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-plus-circle mr-2 text-rose-600"></i>
+                Добавить медиа-материал
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Заголовок</label>
+                    <input type="text" id="mediaTitle" class="w-full px-4 py-2 border border-gray-300 rounded-lg" 
+                           placeholder="Kandinsky Masterpiece Sets Record">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Источник</label>
+                    <select id="mediaSource" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                        <option value="Artnet News">Artnet News (Tier 1)</option>
+                        <option value="The Art Newspaper">The Art Newspaper (Tier 2)</option>
+                        <option value="Frieze">Frieze (Tier 3)</option>
+                        <option value="Local Blog">Local Blog (Tier 4)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Содержание</label>
+                <textarea id="mediaContent" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                          placeholder="An exceptional and rare painting..."></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Автор</label>
+                    <input type="text" id="mediaAuthor" class="w-full px-4 py-2 border border-gray-300 rounded-lg" 
+                           placeholder="Art Critic">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Произведение</label>
+                    <select id="artworkSelect" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                        <option value="">Выберите...</option>
+                    </select>
+                </div>
+            </div>
+
+            <button id="analyzeMediaBtn" class="w-full px-6 py-3 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition">
+                <i class="fas fa-brain mr-2"></i> Проанализировать
+            </button>
+        </div>
+
+        <!-- Analysis Results -->
+        <div id="resultsSection" class="hidden">
+            <!-- Sentiment & Influence -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">
+                        <i class="fas fa-smile mr-2 text-green-600"></i>
+                        Sentiment Analysis
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Score:</span>
+                            <span class="text-2xl font-bold" id="sentimentScore">—</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Interpretation:</span>
+                            <span class="font-semibold" id="sentimentInterpretation">—</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-4">
+                            <div id="sentimentBar" class="h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">
+                        <i class="fas fa-star mr-2 text-yellow-600"></i>
+                        Source Influence
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Score:</span>
+                            <span class="text-2xl font-bold" id="influenceScore">—</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Tier:</span>
+                            <span class="font-semibold" id="influenceTier">—</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-4">
+                            <div id="influenceBar" class="h-4 rounded-full bg-gradient-to-r from-yellow-400 to-yellow-600 transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Price Impact (if artwork selected) -->
+            <div id="priceImpactSection" class="hidden bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">
+                    <i class="fas fa-chart-line mr-2 text-indigo-600"></i>
+                    Price Impact Analysis
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <p class="text-sm text-gray-600 mb-1">Current Price</p>
+                        <p class="text-2xl font-bold text-gray-800" id="currentPrice">—</p>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-4">
+                        <p class="text-sm text-gray-600 mb-1">Estimated Impact</p>
+                        <p class="text-2xl font-bold text-green-600" id="priceImpact">—</p>
+                    </div>
+                    <div class="bg-purple-50 rounded-lg p-4">
+                        <p class="text-sm text-gray-600 mb-1">Adjusted Price</p>
+                        <p class="text-2xl font-bold text-purple-600" id="adjustedPrice">—</p>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg">
+                    <p class="font-semibold text-gray-800 mb-2">
+                        <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
+                        Recommendation:
+                    </p>
+                    <p class="text-gray-700" id="priceRecommendation">—</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentArtworkId = null;
+
+        // Load artworks
+        async function loadArtworks() {
+            try {
+                const response = await axios.get('/api/artworks');
+                const select = document.getElementById('artworkSelect');
+                response.data.artworks.forEach(a => {
+                    const option = document.createElement('option');
+                    option.value = a.id;
+                    option.textContent = a.title;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Load trending
+        async function loadTrending() {
+            try {
+                const response = await axios.get('/api/media-hub/trending?days=7');
+                const container = document.getElementById('trendingContainer');
+                
+                if (response.data.trending_artworks.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center py-4">Нет trending произведений</p>';
+                    return;
+                }
+
+                container.innerHTML = response.data.trending_artworks.map(artwork => `
+                    <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-800">${artwork.title}</h4>
+                            <p class="text-sm text-gray-600">Media Mentions: ${artwork.media_mentions} | Buzz Score: ${artwork.buzz_score}</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl mb-1">${artwork.trend}</div>
+                            <div class="text-sm font-semibold ${artwork.avg_sentiment > 0.3 ? 'text-green-600' : artwork.avg_sentiment < -0.3 ? 'text-red-600' : 'text-gray-600'}">
+                                Sentiment: ${artwork.avg_sentiment}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Analyze media
+        document.getElementById('analyzeMediaBtn').addEventListener('click', async () => {
+            const title = document.getElementById('mediaTitle').value;
+            const content = document.getElementById('mediaContent').value;
+            const source = document.getElementById('mediaSource').value;
+            const author = document.getElementById('mediaAuthor').value;
+            const artworkId = document.getElementById('artworkSelect').value;
+
+            if (!title || !content) {
+                alert('Заполните заголовок и содержание');
+                return;
+            }
+
+            try {
+                // Analyze media
+                const analyzeResponse = await axios.post('/api/media-hub/analyze', {
+                    title,
+                    content,
+                    source,
+                    author,
+                    entity_type: artworkId ? 'artwork' : undefined,
+                    entity_id: artworkId || undefined
+                });
+
+                displayResults(analyzeResponse.data);
+
+                // If artwork selected, get price impact
+                if (artworkId) {
+                    currentArtworkId = artworkId;
+                    const impactResponse = await axios.post('/api/media-hub/price-impact', {
+                        artwork_id: artworkId,
+                        days_window: 30
+                    });
+                    displayPriceImpact(impactResponse.data);
+                }
+
+                // Reload trending
+                loadTrending();
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Ошибка анализа');
+            }
+        });
+
+        function displayResults(data) {
+            document.getElementById('resultsSection').classList.remove('hidden');
+
+            // Sentiment
+            const sentiment = data.sentiment.score;
+            document.getElementById('sentimentScore').textContent = sentiment.toFixed(2);
+            document.getElementById('sentimentInterpretation').textContent = data.sentiment.interpretation;
+            
+            const sentimentBar = document.getElementById('sentimentBar');
+            const sentimentPercent = ((sentiment + 1) / 2) * 100; // Convert -1..1 to 0..100
+            sentimentBar.style.width = sentimentPercent + '%';
+            
+            if (sentiment > 0.3) {
+                sentimentBar.className = 'h-4 rounded-full bg-gradient-to-r from-green-400 to-green-600';
+            } else if (sentiment < -0.3) {
+                sentimentBar.className = 'h-4 rounded-full bg-gradient-to-r from-red-400 to-red-600';
+            } else {
+                sentimentBar.className = 'h-4 rounded-full bg-gradient-to-r from-gray-400 to-gray-600';
+            }
+
+            // Influence
+            const influence = data.influence.score;
+            document.getElementById('influenceScore').textContent = influence.toFixed(2);
+            document.getElementById('influenceTier').textContent = data.influence.tier;
+            
+            document.getElementById('influenceBar').style.width = (influence * 100) + '%';
+        }
+
+        function displayPriceImpact(data) {
+            document.getElementById('priceImpactSection').classList.remove('hidden');
+
+            document.getElementById('currentPrice').textContent = formatPrice(data.price_impact.current_price);
+            document.getElementById('priceImpact').textContent = formatPrice(data.price_impact.price_adjustment);
+            document.getElementById('adjustedPrice').textContent = formatPrice(data.price_impact.adjusted_price);
+            document.getElementById('priceRecommendation').textContent = data.recommendation;
+        }
+
+        function formatPrice(price) {
+            return new Intl.NumberFormat('ru-RU', {
+                style: 'currency',
+                currency: 'RUB',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(price);
+        }
+
+        // Initialize
+        loadArtworks();
+        loadTrending();
+    </script>
+</body>
+</html>

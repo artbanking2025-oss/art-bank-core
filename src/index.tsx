@@ -716,6 +716,11 @@ app.get('/dashboard/3d-visualization', (c) => {
   return c.redirect('/static/3d-visualization.html');
 });
 
+// Media Hub Dashboard (redirect to static file)
+app.get('/dashboard/media', (c) => {
+  return c.redirect('/static/media-dashboard.html');
+});
+
 // Role-specific dashboards
 app.get('/dashboard/:role', (c) => {
   const role = c.req.param('role');
@@ -837,6 +842,39 @@ function renderLandingPage() {
                 <h3 class="text-2xl font-bold text-white mb-2 text-center">Эксперт</h3>
                 <p class="text-white/80 text-center">
                     Оценка подлинности, экспертиза, сертификация
+                </p>
+            </a>
+
+            <!-- Analytics Dashboard -->
+            <a href="/dashboard/analytics" class="group bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-xl p-8 hover:scale-105 transition-transform cursor-pointer border-2 border-white/30">
+                <div class="text-6xl text-white mb-4 text-center">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-2 text-center">Аналитика 2D</h3>
+                <p class="text-white/80 text-center">
+                    Коридор цены, факторы рынка, графики
+                </p>
+            </a>
+
+            <!-- 3D Visualization -->
+            <a href="/dashboard/3d-visualization" class="group bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl p-8 hover:scale-105 transition-transform cursor-pointer border-2 border-white/30">
+                <div class="text-6xl text-white mb-4 text-center">
+                    <i class="fas fa-cube"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-2 text-center">3D Визуализация</h3>
+                <p class="text-white/80 text-center">
+                    Трёхмерная модель рыночного давления
+                </p>
+            </a>
+
+            <!-- Media Hub -->
+            <a href="/dashboard/media" class="group bg-gradient-to-br from-rose-500 to-pink-600 rounded-xl p-8 hover:scale-105 transition-transform cursor-pointer border-2 border-white/30">
+                <div class="text-6xl text-white mb-4 text-center">
+                    <i class="fas fa-newspaper"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-2 text-center">Media Hub</h3>
+                <p class="text-white/80 text-center">
+                    Анализ медиа, trending, влияние на цены
                 </p>
             </a>
 
