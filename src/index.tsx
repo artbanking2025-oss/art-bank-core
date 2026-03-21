@@ -49,6 +49,13 @@ app.route('/api/graph-segmentation', graphSegmentation);
 
 // ========== API ROUTES ==========
 
+// Graph Data API (for visualization)
+app.get('/api/graph-data', async (c) => {
+  const db = new ArtBankDB(c.env.DB);
+  const graphData = await db.getGraphData();
+  return c.json(graphData);
+});
+
 // Nodes API
 app.get('/api/nodes', async (c) => {
   const db = new ArtBankDB(c.env.DB);
@@ -891,6 +898,23 @@ function renderLandingPage() {
         </div>
     </div>
 
+    <!-- Network Graph Section -->
+    <div class="max-w-7xl mx-auto px-4 py-16">
+        <h2 class="text-3xl font-bold text-white mb-8 text-center">
+            <i class="fas fa-project-diagram mr-3"></i>
+            Граф рынка искусства
+        </h2>
+        <div id="network-graph" class="bg-white rounded-xl shadow-2xl p-4" style="height: 600px;"></div>
+        <div class="mt-4 flex justify-center gap-4 text-white/80 text-sm">
+            <div><span class="inline-block w-4 h-4 rounded-full bg-purple-500 mr-2"></span>Художники</div>
+            <div><span class="inline-block w-4 h-4 rounded-full bg-green-500 mr-2"></span>Коллекционеры</div>
+            <div><span class="inline-block w-4 h-4 rounded-full bg-blue-500 mr-2"></span>Галереи</div>
+            <div><span class="inline-block w-4 h-4 rounded-full bg-yellow-500 mr-2"></span>Банки</div>
+            <div><span class="inline-block w-4 h-4 rounded-full bg-red-500 mr-2"></span>Эксперты</div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/vis-network@9.1.2/dist/vis-network.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
     <script>
         // Load stats
@@ -914,6 +938,90 @@ function renderLandingPage() {
             })
             .catch(error => {
                 console.error('Error loading stats:', error);
+            });
+
+        // Load network graph
+        axios.get('/api/graph-data')
+            .then(response => {
+                const { nodes, edges } = response.data;
+                
+                // Color map for node types
+                const colorMap = {
+                    artist: '#9333ea',      // purple
+                    collector: '#22c55e',   // green
+                    gallery: '#3b82f6',     // blue
+                    bank: '#eab308',        // yellow
+                    expert: '#ef4444'       // red
+                };
+
+                // Prepare vis.js data
+                const visNodes = nodes.map(node => ({
+                    id: node.id,
+                    label: node.name,
+                    title: \`\${node.name}\\nТип: \${node.type}\\nДоверие: \${(node.trust_level * 100).toFixed(0)}%\`,
+                    color: {
+                        background: colorMap[node.type] || '#666',
+                        border: '#fff',
+                        highlight: {
+                            background: colorMap[node.type] || '#666',
+                            border: '#fbbf24'
+                        }
+                    },
+                    font: { color: '#fff', size: 14 },
+                    size: 20 + (node.trust_level * 30), // Size based on trust level
+                    shape: 'dot'
+                }));
+
+                const visEdges = edges.map(edge => ({
+                    from: edge.source,
+                    to: edge.target,
+                    label: edge.type,
+                    width: edge.weight * 3,
+                    arrows: 'to',
+                    color: { color: '#cbd5e1', highlight: '#fbbf24' },
+                    font: { size: 10, color: '#94a3b8', strokeWidth: 0 }
+                }));
+
+                // Create network
+                const container = document.getElementById('network-graph');
+                const data = { nodes: visNodes, edges: visEdges };
+                const options = {
+                    nodes: {
+                        borderWidth: 2,
+                        shadow: true
+                    },
+                    edges: {
+                        smooth: {
+                            type: 'continuous',
+                            roundness: 0.5
+                        }
+                    },
+                    physics: {
+                        enabled: true,
+                        barnesHut: {
+                            gravitationalConstant: -8000,
+                            centralGravity: 0.3,
+                            springLength: 150,
+                            springConstant: 0.04
+                        },
+                        stabilization: {
+                            iterations: 200
+                        }
+                    },
+                    interaction: {
+                        hover: true,
+                        tooltipDelay: 100,
+                        navigationButtons: true,
+                        keyboard: true
+                    }
+                };
+
+                new vis.Network(container, data, options);
+            })
+            .catch(error => {
+                console.error('Error loading graph:', error);
+                document.getElementById('network-graph').innerHTML = 
+                    '<div class="flex items-center justify-center h-full text-gray-500">Ошибка загрузки графа</div>';
             });
     </script>
 </body>
