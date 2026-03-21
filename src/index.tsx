@@ -728,6 +728,28 @@ app.get('/dashboard/media', (c) => {
   return c.redirect('/static/media-dashboard.html');
 });
 
+// Artwork detail page
+app.get('/artwork/:id', async (c) => {
+  const artworkId = c.req.param('id');
+  const db = new ArtBankDB(c.env.DB);
+  
+  try {
+    const artwork = await db.getArtwork(artworkId);
+    if (!artwork) {
+      return c.html('<h1>Artwork not found</h1>', 404);
+    }
+    
+    const transactions = await db.getRecentTransactionsByArtwork(artworkId, 10);
+    const validations = await db.getValidationsByArtwork(artworkId);
+    const priceHistory = await db.getPriceHistory(artworkId);
+    
+    return c.html(renderArtworkDetailPage(artwork, transactions, validations, priceHistory));
+  } catch (error: any) {
+    console.error('Error loading artwork:', error);
+    return c.html('<h1>Error loading artwork</h1>', 500);
+  }
+});
+
 // Role-specific dashboards
 app.get('/dashboard/:role', (c) => {
   const role = c.req.param('role');
@@ -737,6 +759,243 @@ app.get('/dashboard/:role', (c) => {
 export default app;
 
 // ========== HTML RENDERERS ==========
+
+function renderArtworkDetailPage(artwork: any, transactions: any[], validations: any[], priceHistory: any[]) {
+  const formatPrice = (price: number) => new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(price);
+  const formatDate = (date: any) => new Date(date * 1000).toLocaleDateString('ru-RU');
+  
+  return `
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${artwork.title} - Art Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen">
+    <header class="bg-white shadow-md border-b-4 border-indigo-500">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <i class="fas fa-palette text-indigo-600 text-3xl"></i>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">${artwork.title}</h1>
+                    <p class="text-sm text-gray-600">Art Bank - Детальная информация</p>
+                </div>
+            </div>
+            <a href="/" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                <i class="fas fa-home mr-2"></i> На главную
+            </a>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-6 py-8">
+        <!-- Main Info Card -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Left Column -->
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4">${artwork.title}</h2>
+                    <div class="space-y-3">
+                        <div class="flex items-start">
+                            <span class="text-gray-600 w-32 font-semibold">Художник:</span>
+                            <span class="text-gray-800">${artwork.artist_node_id}</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="text-gray-600 w-32 font-semibold">Год:</span>
+                            <span class="text-gray-800">${artwork.year || 'Неизвестно'}</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="text-gray-600 w-32 font-semibold">Стиль:</span>
+                            <span class="text-gray-800">${artwork.style || 'Неизвестно'}</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="text-gray-600 w-32 font-semibold">Медиум:</span>
+                            <span class="text-gray-800">${artwork.medium || 'Неизвестно'}</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="text-gray-600 w-32 font-semibold">Размеры:</span>
+                            <span class="text-gray-800">${artwork.dimensions || 'Неизвестно'}</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="text-gray-600 w-32 font-semibold">Состояние:</span>
+                            <span class="text-gray-800">${artwork.condition || 'Неизвестно'}</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="text-gray-600 w-32 font-semibold">Владелец:</span>
+                            <span class="text-gray-800">${artwork.owner_node_id || 'Неизвестно'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div>
+                    <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl p-6 text-white mb-4">
+                        <h3 class="text-lg font-semibold mb-2">Текущая цена (FPC)</h3>
+                        <div class="text-4xl font-bold">${formatPrice(artwork.current_fpc)}</div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-blue-50 rounded-lg p-4">
+                            <p class="text-sm text-gray-600 mb-1">Создано</p>
+                            <p class="text-lg font-bold text-gray-800">${formatDate(artwork.created_at)}</p>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-4">
+                            <p class="text-sm text-gray-600 mb-1">Обновлено</p>
+                            <p class="text-lg font-bold text-gray-800">${formatDate(artwork.updated_at)}</p>
+                        </div>
+                    </div>
+
+                    ${artwork.digital_signature ? `
+                    <div class="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded">
+                        <p class="text-sm font-semibold text-gray-700 mb-1">
+                            <i class="fas fa-certificate text-yellow-600 mr-2"></i>
+                            Цифровая подпись
+                        </p>
+                        <p class="text-xs text-gray-600 font-mono break-all">${artwork.digital_signature}</p>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+
+        <!-- Price History Chart -->
+        ${priceHistory.length > 0 ? `
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-chart-line mr-2 text-indigo-600"></i>
+                История цен
+            </h3>
+            <canvas id="priceChart" height="80"></canvas>
+        </div>
+        ` : ''}
+
+        <!-- Validations -->
+        ${validations.length > 0 ? `
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-check-circle mr-2 text-green-600"></i>
+                Экспертные заключения (${validations.length})
+            </h3>
+            <div class="space-y-4">
+                ${validations.map(v => `
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <span class="text-sm font-semibold text-gray-700">Эксперт:</span>
+                                <span class="text-sm text-gray-600 ml-2">${v.expert_node_id}</span>
+                            </div>
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full ${
+                              v.confidence_level >= 0.8 ? 'bg-green-100 text-green-800' : 
+                              v.confidence_level >= 0.5 ? 'bg-yellow-100 text-yellow-800' : 
+                              'bg-red-100 text-red-800'
+                            }">
+                                Уверенность: ${(v.confidence_level * 100).toFixed(0)}%
+                            </span>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            <span class="font-semibold">Тип:</span> ${v.validation_type} | 
+                            <span class="font-semibold">Оценка:</span> ${formatPrice(v.estimated_value)} | 
+                            <span class="font-semibold">Дата:</span> ${formatDate(v.validated_at)}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        ` : ''}
+
+        <!-- Recent Transactions -->
+        ${transactions.length > 0 ? `
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-exchange-alt mr-2 text-purple-600"></i>
+                Недавние транзакции (${transactions.length})
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-2 text-left">Дата</th>
+                            <th class="px-4 py-2 text-left">От</th>
+                            <th class="px-4 py-2 text-left">Кому</th>
+                            <th class="px-4 py-2 text-right">Цена</th>
+                            <th class="px-4 py-2 text-center">Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${transactions.map(t => `
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="px-4 py-2">${formatDate(t.transaction_date)}</td>
+                                <td class="px-4 py-2 text-xs">${t.from_node_id?.substring(0, 12)}...</td>
+                                <td class="px-4 py-2 text-xs">${t.to_node_id?.substring(0, 12)}...</td>
+                                <td class="px-4 py-2 text-right font-semibold">${formatPrice(t.price)}</td>
+                                <td class="px-4 py-2 text-center">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full ${
+                                      t.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                                      t.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                      'bg-red-100 text-red-800'
+                                    }">
+                                        ${t.status}
+                                    </span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        ` : ''}
+    </div>
+
+    ${priceHistory.length > 0 ? `
+    <script>
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ${JSON.stringify(priceHistory.map(p => formatDate(p.recorded_at)))},
+                datasets: [{
+                    label: 'Цена',
+                    data: ${JSON.stringify(priceHistory.map(p => p.price))},
+                    borderColor: 'rgb(99, 102, 241)',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => new Intl.NumberFormat('ru-RU', { 
+                                style: 'currency', 
+                                currency: 'RUB' 
+                            }).format(context.parsed.y)
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        ticks: {
+                            callback: (value) => new Intl.NumberFormat('ru-RU', { 
+                                notation: 'compact', 
+                                compactDisplay: 'short' 
+                            }).format(value) + ' ₽'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+    ` : ''}
+</body>
+</html>
+  `;
+}
 
 function renderLandingPage() {
   return `
