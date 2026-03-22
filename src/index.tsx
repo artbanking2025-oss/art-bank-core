@@ -787,6 +787,11 @@ app.get('/dashboard/media', (c) => {
   return c.redirect('/static/media-dashboard.html');
 });
 
+// API Documentation page
+app.get('/api-docs', (c) => {
+  return c.redirect('/static/api-docs.html');
+});
+
 // Artwork detail page
 app.get('/artwork/:id', async (c) => {
   const artworkId = c.req.param('id');
@@ -1246,6 +1251,17 @@ function renderLandingPage() {
                 <h3 class="text-2xl font-bold text-white mb-2 text-center">Публичный просмотр</h3>
                 <p class="text-white/80 text-center">
                     Граф связей, статистика рынка, аналитика
+                </p>
+            </a>
+
+            <!-- API Documentation -->
+            <a href="/api-docs" class="group bg-gradient-to-br from-slate-600 to-slate-800 rounded-xl p-8 hover:scale-105 transition-transform cursor-pointer border-2 border-white/30">
+                <div class="text-6xl text-white mb-4 text-center">
+                    <i class="fas fa-book"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-2 text-center">API Документация</h3>
+                <p class="text-white/80 text-center">
+                    REST API Reference v2.3
                 </p>
             </a>
         </div>

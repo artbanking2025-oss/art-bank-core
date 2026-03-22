@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation - Art Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50 min-h-screen">
+    <header class="bg-white shadow-md border-b-4 border-slate-600">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <i class="fas fa-book text-slate-600 text-3xl"></i>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Art Bank API Documentation</h1>
+                    <p class="text-sm text-gray-600">REST API v2.3 - Complete Reference</p>
+                </div>
+            </div>
+            <a href="/" class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition">
+                <i class="fas fa-home mr-2"></i> На главную
+            </a>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-6 py-8">
+        <!-- Quick Links -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-link mr-2 text-slate-600"></i>
+                Быстрая навигация
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <a href="#nodes" class="p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition text-center">
+                    <i class="fas fa-circle-nodes text-purple-600 text-2xl mb-2"></i>
+                    <p class="text-sm font-semibold">Nodes</p>
+                </a>
+                <a href="#artworks" class="p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition text-center">
+                    <i class="fas fa-palette text-blue-600 text-2xl mb-2"></i>
+                    <p class="text-sm font-semibold">Artworks</p>
+                </a>
+                <a href="#transactions" class="p-3 bg-green-50 rounded-lg hover:bg-green-100 transition text-center">
+                    <i class="fas fa-exchange-alt text-green-600 text-2xl mb-2"></i>
+                    <p class="text-sm font-semibold">Transactions</p>
+                </a>
+                <a href="#analytics" class="p-3 bg-orange-50 rounded-lg hover:bg-orange-100 transition text-center">
+                    <i class="fas fa-chart-line text-orange-600 text-2xl mb-2"></i>
+                    <p class="text-sm font-semibold">Analytics</p>
+                </a>
+                <a href="#media" class="p-3 bg-rose-50 rounded-lg hover:bg-rose-100 transition text-center">
+                    <i class="fas fa-newspaper text-rose-600 text-2xl mb-2"></i>
+                    <p class="text-sm font-semibold">Media Hub</p>
+                </a>
+                <a href="#segmentation" class="p-3 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition text-center">
+                    <i class="fas fa-project-diagram text-indigo-600 text-2xl mb-2"></i>
+                    <p class="text-sm font-semibold">Segmentation</p>
+                </a>
+                <a href="#export" class="p-3 bg-teal-50 rounded-lg hover:bg-teal-100 transition text-center">
+                    <i class="fas fa-download text-teal-600 text-2xl mb-2"></i>
+                    <p class="text-sm font-semibold">Export</p>
+                </a>
+                <a href="#roles" class="p-3 bg-amber-50 rounded-lg hover:bg-amber-100 transition text-center">
+                    <i class="fas fa-users text-amber-600 text-2xl mb-2"></i>
+                    <p class="text-sm font-semibold">Role APIs</p>
+                </a>
+            </div>
+        </div>
+
+        <!-- Base URL -->
+        <div class="bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-xl p-6 mb-6">
+            <h3 class="text-lg font-bold mb-2">Base URL</h3>
+            <code class="bg-slate-800 px-4 py-2 rounded block">https://your-domain.pages.dev/api</code>
+        </div>
+
+        <!-- Nodes API -->
+        <div id="nodes" class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-circle-nodes text-purple-600 mr-3"></i>
+                Nodes API
+            </h2>
+            
+            <div class="space-y-4">
+                <!-- GET /api/nodes -->
+                <div class="border-l-4 border-purple-500 pl-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded font-semibold text-sm">GET</span>
+                        <code class="text-sm">/api/nodes</code>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-2">Получить список всех узлов или фильтровать по типу</p>
+                    <div class="bg-gray-50 rounded p-3 text-sm">
+                        <p class="font-semibold mb-1">Query параметры:</p>
+                        <ul class="list-disc list-inside text-gray-700">
+                            <li><code>type</code> (optional): artist, collector, gallery, bank, expert</li>
+                        </ul>
+                        <p class="font-semibold mt-2 mb-1">Пример:</p>
+                        <code class="text-xs bg-white px-2 py-1 rounded">GET /api/nodes?type=artist</code>
+                    </div>
+                </div>
+
+                <!-- GET /api/nodes/:id -->
+                <div class="border-l-4 border-purple-500 pl-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded font-semibold text-sm">GET</span>
+                        <code class="text-sm">/api/nodes/:id</code>
+                    </div>
+                    <p class="text-gray-600 text-sm">Получить информацию о конкретном узле</p>
+                </div>
+
+                <!-- POST /api/nodes -->
+                <div class="border-l-4 border-purple-500 pl-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded font-semibold text-sm">POST</span>
+                        <code class="text-sm">/api/nodes</code>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-2">Создать новый узел</p>
+                    <div class="bg-gray-50 rounded p-3 text-sm">
+                        <p class="font-semibold mb-1">Request Body:</p>
+                        <pre class="bg-white p-2 rounded text-xs overflow-x-auto">{
+  "node_type": "artist",
+  "name": "Иван Иванов",
+  "jurisdiction": "RU",
+  "metadata": {"style": "Импрессионизм"}
+}</pre>
+                    </div>
+                </div>
+
+                <!-- GET /api/graph-data -->
+                <div class="border-l-4 border-purple-500 pl-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded font-semibold text-sm">GET</span>
+                        <code class="text-sm">/api/graph-data</code>
+                    </div>
+                    <p class="text-gray-600 text-sm">Получить данные графа для визуализации (узлы и рёбра)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Artworks API -->
+        <div id="artworks" class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-palette text-blue-600 mr-3"></i>
+                Artworks API
+            </h2>
+            
+            <div class="space-y-4">
+                <!-- GET /api/artworks -->
+                <div class="border-l-4 border-blue-500 pl-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded font-semibold text-sm">GET</span>
+                        <code class="text-sm">/api/artworks</code>
+                    </div>
+                    <p class="text-gray-600 text-sm">Получить список всех произведений</p>
+                </div>
+
+                <!-- GET /api/artworks/:id -->
+                <div class="border-l-4 border-blue-500 pl-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded font-semibold text-sm">GET</span>
+                        <code class="text-sm">/api/artworks/:id</code>
+                    </div>
+                    <p class="text-gray-600 text-sm">Получить детальную информацию о произведении</p>
+                </div>
+
+                <!-- POST /api/artworks -->
+                <div class="border-l-4 border-blue-500 pl-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded font-semibold text-sm">POST</span>
+                        <code class="text-sm">/api/artworks</code>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-2">Создать новое произведение</p>
+                    <div class="bg-gray-50 rounded p-3 text-sm">
+                        <p class="font-semibold mb-1">Request Body:</p>
+                        <pre class="bg-white p-2 rounded text-xs overflow-x-auto">{
+  "title": "Закат над Волгой",
+  "artist_node_id": "artist-1",
+  "year": 2024,
+  "style": "Реализм",
+  "medium": "Масло на холсте",
+  "current_fpc": 5000000
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics API -->
+        <div id="analytics" class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-chart-line text-orange-600 mr-3"></i>
+                Analytics API
+            </h2>
+            
+            <div class="space-y-4">
+                <!-- POST /api/analytics-extended/price-corridor -->
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded font-semibold text-sm">POST</span>
+                        <code class="text-sm">/api/analytics-extended/price-corridor</code>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-2">Расчет ценового коридора для произведения</p>
+                    <div class="bg-gray-50 rounded p-3 text-sm">
+                        <p class="font-semibold mb-1">Request Body:</p>
+                        <pre class="bg-white p-2 rounded text-xs overflow-x-auto">{
+  "artwork_id": "artwork-1",
+  "period_months": 6
+}</pre>
+                        <p class="font-semibold mt-2 mb-1">Response:</p>
+                        <pre class="bg-white p-2 rounded text-xs overflow-x-auto">{
+  "artwork_id": "artwork-1",
+  "current_price": 15000000,
+  "corridor": {
+    "gallery_median": 15000000,
+    "sales_median": 12750000,
+    "lower_bound": 15000000,
+    "upper_bound": 15000000,
+    "spread_percentage": 15
+  },
+  "liquidity": {
+    "rating": "medium",
+    "comparable_sales": 0,
+    "comparable_listings": 0
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <!-- POST /api/analytics-extended/market-factors -->
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded font-semibold text-sm">POST</span>
+                        <code class="text-sm">/api/analytics-extended/market-factors</code>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-2">Анализ рыночных факторов (F1, F2, F3)</p>
+                    <div class="bg-gray-50 rounded p-3 text-sm">
+                        <p class="font-semibold mb-1">Request Body:</p>
+                        <pre class="bg-white p-2 rounded text-xs overflow-x-auto">{
+  "artwork_id": "artwork-1"
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Media Hub API -->
+        <div id="media" class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-newspaper text-rose-600 mr-3"></i>
+                Media Hub API
+            </h2>
+            
+            <div class="space-y-4">
+                <!-- POST /api/media-hub/analyze -->
+                <div class="border-l-4 border-rose-500 pl-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded font-semibold text-sm">POST</span>
+                        <code class="text-sm">/api/media-hub/analyze</code>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-2">Анализ медиа-материала с sentiment analysis</p>
+                    <div class="bg-gray-50 rounded p-3 text-sm">
+                        <p class="font-semibold mb-1">Request Body:</p>
+                        <pre class="bg-white p-2 rounded text-xs overflow-x-auto">{
+  "title": "Рекордная продажа картины",
+  "content": "Произведение установило новый рекорд...",
+  "source": "Artnet News",
+  "entity_type": "artwork",
+  "entity_id": "artwork-1"
+}</pre>
+                    </div>
+                </div>
+
+                <!-- POST /api/media-hub/price-impact -->
+                <div class="border-l-4 border-rose-500 pl-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded font-semibold text-sm">POST</span>
+                        <code class="text-sm">/api/media-hub/price-impact</code>
+                    </div>
+                    <p class="text-gray-600 text-sm">Оценка влияния медиа на цену произведения</p>
+                </div>
+
+                <!-- GET /api/media-hub/trending -->
+                <div class="border-l-4 border-rose-500 pl-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded font-semibold text-sm">GET</span>
+                        <code class="text-sm">/api/media-hub/trending?days=7</code>
+                    </div>
+                    <p class="text-gray-600 text-sm">Trending произведения по медиа-активности</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Graph Segmentation API -->
+        <div id="segmentation" class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-project-diagram text-indigo-600 mr-3"></i>
+                Graph Segmentation API
+            </h2>
+            
+            <div class="space-y-4">
+                <div class="border-l-4 border-indigo-500 pl-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded font-semibold text-sm">POST</span>
+                        <code class="text-sm">/api/graph-segmentation/by-chronology</code>
+                    </div>
+                    <p class="text-gray-600 text-sm">Сегментация по хронологическим периодам</p>
+                </div>
+
+                <div class="border-l-4 border-indigo-500 pl-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded font-semibold text-sm">POST</span>
+                        <code class="text-sm">/api/graph-segmentation/by-style</code>
+                    </div>
+                    <p class="text-gray-600 text-sm">Сегментация по стилю</p>
+                </div>
+
+                <div class="border-l-4 border-indigo-500 pl-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded font-semibold text-sm">POST</span>
+                        <code class="text-sm">/api/graph-segmentation/by-geography</code>
+                    </div>
+                    <p class="text-gray-600 text-sm">Сегментация по географии</p>
+                </div>
+
+                <div class="border-l-4 border-indigo-500 pl-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded font-semibold text-sm">POST</span>
+                        <code class="text-sm">/api/graph-segmentation/multi-dimensional</code>
+                    </div>
+                    <p class="text-gray-600 text-sm">Многомерная кластеризация</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export API -->
+        <div id="export" class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-download text-teal-600 mr-3"></i>
+                Export API
+            </h2>
+            
+            <div class="space-y-4">
+                <div class="border-l-4 border-teal-500 pl-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded font-semibold text-sm">GET</span>
+                        <code class="text-sm">/api/export/:type?format=csv|json</code>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-2">Универсальный экспорт данных</p>
+                    <div class="bg-gray-50 rounded p-3 text-sm">
+                        <p class="font-semibold mb-1">Параметры:</p>
+                        <ul class="list-disc list-inside text-gray-700">
+                            <li><code>type</code>: nodes, artworks, transactions, validations</li>
+                            <li><code>format</code>: json или csv</li>
+                        </ul>
+                        <p class="font-semibold mt-2 mb-1">Примеры:</p>
+                        <code class="text-xs bg-white px-2 py-1 rounded block mb-1">GET /api/export/nodes?format=csv</code>
+                        <code class="text-xs bg-white px-2 py-1 rounded block">GET /api/export/artworks?format=json</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Role APIs -->
+        <div id="roles" class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-users text-amber-600 mr-3"></i>
+                Role-Specific APIs
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="font-bold text-lg mb-2 text-purple-600">Artist API</h3>
+                    <code class="text-xs block mb-1">/api/artist/*</code>
+                    <p class="text-sm text-gray-600">Управление профилем художника, создание произведений</p>
+                </div>
+
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="font-bold text-lg mb-2 text-green-600">Collector API</h3>
+                    <code class="text-xs block mb-1">/api/collector/*</code>
+                    <p class="text-sm text-gray-600">Управление коллекцией, покупка произведений</p>
+                </div>
+
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="font-bold text-lg mb-2 text-blue-600">Gallery API</h3>
+                    <code class="text-xs block mb-1">/api/gallery/*</code>
+                    <p class="text-sm text-gray-600">Управление выставками, каталогом</p>
+                </div>
+
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="font-bold text-lg mb-2 text-yellow-600">Bank API</h3>
+                    <code class="text-xs block mb-1">/api/bank/*</code>
+                    <p class="text-sm text-gray-600">Кредитование под залог искусства</p>
+                </div>
+
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="font-bold text-lg mb-2 text-red-600">Expert API</h3>
+                    <code class="text-xs block mb-1">/api/expert/*</code>
+                    <p class="text-sm text-gray-600">Экспертные заключения, аутентификация</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Response Codes -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-code text-gray-600 mr-3"></i>
+                HTTP Status Codes
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex items-start gap-3">
+                    <span class="px-3 py-1 bg-green-100 text-green-800 rounded font-semibold text-sm">200</span>
+                    <div>
+                        <p class="font-semibold">OK</p>
+                        <p class="text-sm text-gray-600">Успешный запрос</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3">
+                    <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded font-semibold text-sm">201</span>
+                    <div>
+                        <p class="font-semibold">Created</p>
+                        <p class="text-sm text-gray-600">Ресурс создан</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3">
+                    <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded font-semibold text-sm">400</span>
+                    <div>
+                        <p class="font-semibold">Bad Request</p>
+                        <p class="text-sm text-gray-600">Некорректный запрос</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3">
+                    <span class="px-3 py-1 bg-red-100 text-red-800 rounded font-semibold text-sm">404</span>
+                    <div>
+                        <p class="font-semibold">Not Found</p>
+                        <p class="text-sm text-gray-600">Ресурс не найден</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3">
+                    <span class="px-3 py-1 bg-red-100 text-red-800 rounded font-semibold text-sm">500</span>
+                    <div>
+                        <p class="font-semibold">Internal Server Error</p>
+                        <p class="text-sm text-gray-600">Внутренняя ошибка сервера</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-800 text-white py-6 mt-12">
+        <div class="container mx-auto px-6 text-center">
+            <p class="text-sm">© 2024 Art Bank Core Platform. API v2.3</p>
+            <p class="text-xs text-gray-400 mt-2">Built with Hono + Cloudflare Workers</p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
