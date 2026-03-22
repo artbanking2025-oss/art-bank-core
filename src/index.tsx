@@ -56,6 +56,65 @@ app.get('/api/graph-data', async (c) => {
   return c.json(graphData);
 });
 
+// Export API - Universal data export in CSV or JSON
+app.get('/api/export/:type', async (c) => {
+  const exportType = c.req.param('type'); // 'nodes', 'artworks', 'transactions', 'validations'
+  const format = c.req.query('format') || 'json'; // 'json' or 'csv'
+  const db = new ArtBankDB(c.env.DB);
+  
+  try {
+    let data: any[] = [];
+    let filename = '';
+    
+    switch (exportType) {
+      case 'nodes':
+        data = await db.getAllNodes();
+        filename = 'art_bank_nodes';
+        break;
+      case 'artworks':
+        data = await db.getAllArtworks();
+        filename = 'art_bank_artworks';
+        break;
+      case 'transactions':
+        data = await db.getAllTransactions();
+        filename = 'art_bank_transactions';
+        break;
+      case 'validations':
+        const artworks = await db.getAllArtworks();
+        const validations = [];
+        for (const artwork of artworks) {
+          const vals = await db.getValidationsByArtwork(artwork.id);
+          validations.push(...vals);
+        }
+        data = validations;
+        filename = 'art_bank_validations';
+        break;
+      default:
+        return c.json({ error: 'Invalid export type' }, 400);
+    }
+    
+    if (format === 'csv') {
+      const csv = convertToCSV(data);
+      return new Response(csv, {
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="${filename}_${Date.now()}.csv"`
+        }
+      });
+    } else {
+      return new Response(JSON.stringify(data, null, 2), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Disposition': `attachment; filename="${filename}_${Date.now()}.json"`
+        }
+      });
+    }
+  } catch (error: any) {
+    console.error('Export error:', error);
+    return c.json({ error: 'Export failed', details: error.message }, 500);
+  }
+});
+
 // Nodes API
 app.get('/api/nodes', async (c) => {
   const db = new ArtBankDB(c.env.DB);
@@ -759,6 +818,41 @@ app.get('/dashboard/:role', (c) => {
 export default app;
 
 // ========== HTML RENDERERS ==========
+
+// Helper function to convert JSON array to CSV
+function convertToCSV(data: any[]): string {
+  if (data.length === 0) return '';
+  
+  // Get all unique keys from all objects
+  const keys = Array.from(new Set(data.flatMap(obj => Object.keys(obj))));
+  
+  // Create header row
+  const header = keys.join(',');
+  
+  // Create data rows
+  const rows = data.map(obj => {
+    return keys.map(key => {
+      let value = obj[key];
+      
+      // Handle different data types
+      if (value === null || value === undefined) {
+        return '';
+      }
+      if (typeof value === 'object') {
+        value = JSON.stringify(value);
+      }
+      
+      // Escape quotes and wrap in quotes if contains comma or newline
+      value = String(value).replace(/"/g, '""');
+      if (value.includes(',') || value.includes('\n') || value.includes('"')) {
+        return `"${value}"`;
+      }
+      return value;
+    }).join(',');
+  });
+  
+  return [header, ...rows].join('\n');
+}
 
 function renderArtworkDetailPage(artwork: any, transactions: any[], validations: any[], priceHistory: any[]) {
   const formatPrice = (price: number) => new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(price);

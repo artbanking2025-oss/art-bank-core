@@ -23,9 +23,42 @@ export function renderAnalyticsDashboard(): string {
                     <p class="text-sm text-gray-600">Единый коридор платформы</p>
                 </div>
             </div>
-            <a href="/" class="px-4 py-2 bg-purple-600 text-white rounded-lg">
-                <i class="fas fa-home mr-2"></i>Главная
-            </a>
+            <div class="flex gap-2">
+                <div class="relative">
+                    <button id="exportBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                        <i class="fas fa-download mr-2"></i>Export
+                    </button>
+                    <div id="exportMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-10">
+                        <a href="/api/export/nodes?format=json" class="block px-4 py-2 hover:bg-gray-100 rounded-t-lg">
+                            <i class="fas fa-file-code mr-2 text-blue-600"></i>Nodes (JSON)
+                        </a>
+                        <a href="/api/export/nodes?format=csv" class="block px-4 py-2 hover:bg-gray-100">
+                            <i class="fas fa-file-csv mr-2 text-green-600"></i>Nodes (CSV)
+                        </a>
+                        <a href="/api/export/artworks?format=json" class="block px-4 py-2 hover:bg-gray-100">
+                            <i class="fas fa-file-code mr-2 text-blue-600"></i>Artworks (JSON)
+                        </a>
+                        <a href="/api/export/artworks?format=csv" class="block px-4 py-2 hover:bg-gray-100">
+                            <i class="fas fa-file-csv mr-2 text-green-600"></i>Artworks (CSV)
+                        </a>
+                        <a href="/api/export/transactions?format=json" class="block px-4 py-2 hover:bg-gray-100">
+                            <i class="fas fa-file-code mr-2 text-blue-600"></i>Transactions (JSON)
+                        </a>
+                        <a href="/api/export/transactions?format=csv" class="block px-4 py-2 hover:bg-gray-100">
+                            <i class="fas fa-file-csv mr-2 text-green-600"></i>Transactions (CSV)
+                        </a>
+                        <a href="/api/export/validations?format=json" class="block px-4 py-2 hover:bg-gray-100">
+                            <i class="fas fa-file-code mr-2 text-blue-600"></i>Validations (JSON)
+                        </a>
+                        <a href="/api/export/validations?format=csv" class="block px-4 py-2 hover:bg-gray-100 rounded-b-lg">
+                            <i class="fas fa-file-csv mr-2 text-green-600"></i>Validations (CSV)
+                        </a>
+                    </div>
+                </div>
+                <a href="/" class="px-4 py-2 bg-purple-600 text-white rounded-lg">
+                    <i class="fas fa-home mr-2"></i>Главная
+                </a>
+            </div>
         </div>
     </header>
 
@@ -193,6 +226,18 @@ export function renderAnalyticsDashboard(): string {
         function formatPrice(price) {
             return new Intl.NumberFormat('ru-RU').format(price) + ' ₽';
         }
+
+        // Toggle export menu
+        document.getElementById('exportBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const menu = document.getElementById('exportMenu');
+            menu.classList.toggle('hidden');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', () => {
+            document.getElementById('exportMenu').classList.add('hidden');
+        });
 
         loadArtworks();
     </script>
