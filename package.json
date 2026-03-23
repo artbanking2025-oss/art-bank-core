@@ -6,12 +6,20 @@
     "dev:sandbox": "wrangler pages dev dist --d1=art-bank-db --local --ip 0.0.0.0 --port 3000",
     "build": "vite build",
     "preview": "wrangler pages dev",
-    "deploy": "npm run build && wrangler pages deploy",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name art-bank",
+    "deploy:prod": "npm run build && wrangler pages deploy dist --project-name art-bank --branch main",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "db:create": "wrangler d1 create art-bank-db",
     "db:migrate:local": "wrangler d1 migrations apply art-bank-db --local",
+    "db:migrate:prod": "wrangler d1 migrations apply art-bank-db",
     "db:seed": "wrangler d1 execute art-bank-db --local --file=./seed.sql",
+    "db:console:local": "wrangler d1 execute art-bank-db --local",
+    "db:console:prod": "wrangler d1 execute art-bank-db",
     "db:reset": "rm -rf .wrangler/state/v3/d1 && npm run db:migrate:local && npm run db:seed",
-    "clean-port": "fuser -k 3000/tcp 2>/dev/null || true"
+    "clean-port": "fuser -k 3000/tcp 2>/dev/null || true",
+    "whoami": "wrangler whoami",
+    "pages:create": "wrangler pages project create art-bank --production-branch main",
+    "pages:list": "wrangler pages project list"
   },
   "dependencies": {
     "hono": "^4.12.7"
