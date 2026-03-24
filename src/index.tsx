@@ -1124,37 +1124,55 @@ function renderLandingPage() {
 <body class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 min-h-screen">
     <!-- Top Navigation -->
     <div class="bg-white/10 backdrop-blur-lg border-b border-white/20">
-        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="text-2xl font-bold text-white">
-                <i class="fas fa-palette mr-2"></i>Art Bank
+        <div class="container mx-auto px-4 py-3 md:py-4">
+            <div class="flex justify-between items-center">
+                <div class="text-xl md:text-2xl font-bold text-white">
+                    <i class="fas fa-palette mr-2"></i>
+                    <span class="hidden sm:inline">Art Bank</span>
+                    <span class="sm:hidden">AB</span>
+                </div>
+                
+                <!-- Desktop Auth Buttons -->
+                <div id="authButtons" class="hidden md:flex gap-3">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                
+                <!-- Mobile Menu Button -->
+                <button id="mobileMenuBtn" class="md:hidden text-white text-2xl" onclick="toggleMobileMenu()">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
-            <div id="authButtons" class="flex gap-3">
-                <!-- Will be populated by JavaScript -->
+            
+            <!-- Mobile Menu -->
+            <div id="mobileMenu" class="hidden md:hidden mt-4 pt-4 border-t border-white/20">
+                <div id="mobileAuthButtons" class="flex flex-col gap-2">
+                    <!-- Will be populated by JavaScript -->
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="container mx-auto px-4 py-12">
-        <div class="text-center mb-16">
-            <h1 class="text-6xl font-bold text-white mb-4">
-                <i class="fas fa-project-diagram mr-4"></i>
-                Art Bank Core
+    <div class="container mx-auto px-4 py-8 md:py-12">
+        <div class="text-center mb-12 md:mb-16">
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
+                <i class="fas fa-project-diagram mr-2 md:mr-4"></i>
+                <span class="block sm:inline mt-2 sm:mt-0">Art Bank Core</span>
             </h1>
-            <p class="text-2xl text-blue-200">
+            <p class="text-lg md:text-xl lg:text-2xl text-blue-200 px-4">
                 Графовая система для арт-рынка с репутационной моделью
             </p>
         </div>
 
-        <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 mb-12">
-            <h2 class="text-3xl font-bold text-white mb-6">
+        <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 md:p-8 mb-8 md:mb-12">
+            <h2 class="text-2xl md:text-3xl font-bold text-white mb-4 md:mb-6">
                 <i class="fas fa-info-circle mr-2"></i>
                 О платформе
             </h2>
-            <p class="text-lg text-blue-100 mb-4">
+            <p class="text-base md:text-lg text-blue-100 mb-3 md:mb-4">
                 Art Bank Core - это математическая модель арт-рынка, представленная в виде графа. 
                 Каждый участник рынка - это узел (Node) с уникальным цифровым паспортом и репутационным весом.
             </p>
-            <p class="text-lg text-blue-100">
+            <p class="text-base md:text-lg text-blue-100">
                 Связи между участниками формируют "доверительную сеть", которая автоматически выявляет 
                 аномалии и обеспечивает прозрачность транзакций.
             </p>
@@ -1170,123 +1188,123 @@ function renderLandingPage() {
             </div>
         </div>
 
-        <div class="text-center mb-12">
-            <h2 class="text-3xl font-bold text-white mb-8">
+        <div class="text-center mb-8 md:mb-12">
+            <h2 class="text-2xl md:text-3xl font-bold text-white mb-4 md:mb-8 px-4">
                 <i class="fas fa-users mr-2"></i>
-                Выберите роль для входа
+                <span class="block sm:inline mt-2 sm:mt-0">Выберите роль для входа</span>
             </h2>
-            <p class="text-lg text-blue-200 mb-8">
+            <p class="text-base md:text-lg text-blue-200 mb-4 md:mb-8 px-4">
                 Каждая роль имеет свой интерфейс и набор функций
             </p>
         </div>
 
-        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <!-- Artist -->
-            <a href="/dashboard/artist" class="group bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl p-8 hover:scale-105 transition-transform cursor-pointer">
-                <div class="text-6xl text-white mb-4 text-center">
+            <a href="/dashboard/artist" class="group bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl p-6 md:p-8 hover:scale-105 transition-transform cursor-pointer">
+                <div class="text-5xl md:text-6xl text-white mb-3 md:mb-4 text-center">
                     <i class="fas fa-palette"></i>
                 </div>
-                <h3 class="text-2xl font-bold text-white mb-2 text-center">Художник</h3>
-                <p class="text-white/80 text-center">
+                <h3 class="text-xl md:text-2xl font-bold text-white mb-2 text-center">Художник</h3>
+                <p class="text-sm md:text-base text-white/80 text-center">
                     Создание работ, цифровая подпись, отслеживание провенанса
                 </p>
             </a>
 
             <!-- Collector -->
-            <a href="/dashboard/collector" class="group bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl p-8 hover:scale-105 transition-transform cursor-pointer">
-                <div class="text-6xl text-white mb-4 text-center">
+            <a href="/dashboard/collector" class="group bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl p-6 md:p-8 hover:scale-105 transition-transform cursor-pointer">
+                <div class="text-5xl md:text-6xl text-white mb-3 md:mb-4 text-center">
                     <i class="fas fa-gem"></i>
                 </div>
-                <h3 class="text-2xl font-bold text-white mb-2 text-center">Коллекционер</h3>
-                <p class="text-white/80 text-center">
+                <h3 class="text-xl md:text-2xl font-bold text-white mb-2 text-center">Коллекционер</h3>
+                <p class="text-sm md:text-base text-white/80 text-center">
                     Управление коллекцией, покупка, история владения
                 </p>
             </a>
 
             <!-- Gallery -->
-            <a href="/dashboard/gallery" class="group bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl p-8 hover:scale-105 transition-transform cursor-pointer">
-                <div class="text-6xl text-white mb-4 text-center">
+            <a href="/dashboard/gallery" class="group bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl p-6 md:p-8 hover:scale-105 transition-transform cursor-pointer">
+                <div class="text-5xl md:text-6xl text-white mb-3 md:mb-4 text-center">
                     <i class="fas fa-store"></i>
                 </div>
-                <h3 class="text-2xl font-bold text-white mb-2 text-center">Галерея</h3>
-                <p class="text-white/80 text-center">
+                <h3 class="text-xl md:text-2xl font-bold text-white mb-2 text-center">Галерея</h3>
+                <p class="text-sm md:text-base text-white/80 text-center">
                     Экспонирование работ, организация продаж
                 </p>
             </a>
 
             <!-- Bank -->
-            <a href="/dashboard/bank" class="group bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-8 hover:scale-105 transition-transform cursor-pointer">
-                <div class="text-6xl text-white mb-4 text-center">
+            <a href="/dashboard/bank" class="group bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-6 md:p-8 hover:scale-105 transition-transform cursor-pointer">
+                <div class="text-5xl md:text-6xl text-white mb-3 md:mb-4 text-center">
                     <i class="fas fa-university"></i>
                 </div>
-                <h3 class="text-2xl font-bold text-white mb-2 text-center">Банк</h3>
-                <p class="text-white/80 text-center">
+                <h3 class="text-xl md:text-2xl font-bold text-white mb-2 text-center">Банк</h3>
+                <p class="text-sm md:text-base text-white/80 text-center">
                     Кредитование под арт, валидация сделок
                 </p>
             </a>
 
             <!-- Expert -->
-            <a href="/dashboard/expert" class="group bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl p-8 hover:scale-105 transition-transform cursor-pointer">
-                <div class="text-6xl text-white mb-4 text-center">
+            <a href="/dashboard/expert" class="group bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl p-6 md:p-8 hover:scale-105 transition-transform cursor-pointer">
+                <div class="text-5xl md:text-6xl text-white mb-3 md:mb-4 text-center">
                     <i class="fas fa-certificate"></i>
                 </div>
-                <h3 class="text-2xl font-bold text-white mb-2 text-center">Эксперт</h3>
-                <p class="text-white/80 text-center">
+                <h3 class="text-xl md:text-2xl font-bold text-white mb-2 text-center">Эксперт</h3>
+                <p class="text-sm md:text-base text-white/80 text-center">
                     Оценка подлинности, экспертиза, сертификация
                 </p>
             </a>
 
             <!-- Analytics Dashboard -->
-            <a href="/dashboard/analytics" class="group bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-xl p-8 hover:scale-105 transition-transform cursor-pointer border-2 border-white/30">
-                <div class="text-6xl text-white mb-4 text-center">
+            <a href="/dashboard/analytics" class="group bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-xl p-6 md:p-8 hover:scale-105 transition-transform cursor-pointer border-2 border-white/30">
+                <div class="text-5xl md:text-6xl text-white mb-3 md:mb-4 text-center">
                     <i class="fas fa-chart-line"></i>
                 </div>
-                <h3 class="text-2xl font-bold text-white mb-2 text-center">Аналитика 2D</h3>
-                <p class="text-white/80 text-center">
+                <h3 class="text-xl md:text-2xl font-bold text-white mb-2 text-center">Аналитика 2D</h3>
+                <p class="text-sm md:text-base text-white/80 text-center">
                     Коридор цены, факторы рынка, графики
                 </p>
             </a>
 
             <!-- 3D Visualization -->
-            <a href="/dashboard/3d-visualization" class="group bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl p-8 hover:scale-105 transition-transform cursor-pointer border-2 border-white/30">
-                <div class="text-6xl text-white mb-4 text-center">
+            <a href="/dashboard/3d-visualization" class="group bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl p-6 md:p-8 hover:scale-105 transition-transform cursor-pointer border-2 border-white/30">
+                <div class="text-5xl md:text-6xl text-white mb-3 md:mb-4 text-center">
                     <i class="fas fa-cube"></i>
                 </div>
-                <h3 class="text-2xl font-bold text-white mb-2 text-center">3D Визуализация</h3>
-                <p class="text-white/80 text-center">
+                <h3 class="text-xl md:text-2xl font-bold text-white mb-2 text-center">3D Визуализация</h3>
+                <p class="text-sm md:text-base text-white/80 text-center">
                     Трёхмерная модель рыночного давления
                 </p>
             </a>
 
             <!-- Media Hub -->
-            <a href="/dashboard/media" class="group bg-gradient-to-br from-rose-500 to-pink-600 rounded-xl p-8 hover:scale-105 transition-transform cursor-pointer border-2 border-white/30">
-                <div class="text-6xl text-white mb-4 text-center">
+            <a href="/dashboard/media" class="group bg-gradient-to-br from-rose-500 to-pink-600 rounded-xl p-6 md:p-8 hover:scale-105 transition-transform cursor-pointer border-2 border-white/30">
+                <div class="text-5xl md:text-6xl text-white mb-3 md:mb-4 text-center">
                     <i class="fas fa-newspaper"></i>
                 </div>
-                <h3 class="text-2xl font-bold text-white mb-2 text-center">Media Hub</h3>
-                <p class="text-white/80 text-center">
+                <h3 class="text-xl md:text-2xl font-bold text-white mb-2 text-center">Media Hub</h3>
+                <p class="text-sm md:text-base text-white/80 text-center">
                     Анализ медиа, trending, влияние на цены
                 </p>
             </a>
 
             <!-- Public View -->
-            <a href="/dashboard/public" class="group bg-gradient-to-br from-gray-600 to-gray-800 rounded-xl p-8 hover:scale-105 transition-transform cursor-pointer">
-                <div class="text-6xl text-white mb-4 text-center">
+            <a href="/dashboard/public" class="group bg-gradient-to-br from-gray-600 to-gray-800 rounded-xl p-6 md:p-8 hover:scale-105 transition-transform cursor-pointer">
+                <div class="text-5xl md:text-6xl text-white mb-3 md:mb-4 text-center">
                     <i class="fas fa-chart-network"></i>
                 </div>
-                <h3 class="text-2xl font-bold text-white mb-2 text-center">Публичный просмотр</h3>
-                <p class="text-white/80 text-center">
+                <h3 class="text-xl md:text-2xl font-bold text-white mb-2 text-center">Публичный просмотр</h3>
+                <p class="text-sm md:text-base text-white/80 text-center">
                     Граф связей, статистика рынка, аналитика
                 </p>
             </a>
 
             <!-- API Documentation -->
-            <a href="/api-docs" class="group bg-gradient-to-br from-slate-600 to-slate-800 rounded-xl p-8 hover:scale-105 transition-transform cursor-pointer border-2 border-white/30">
-                <div class="text-6xl text-white mb-4 text-center">
+            <a href="/api-docs" class="group bg-gradient-to-br from-slate-600 to-slate-800 rounded-xl p-6 md:p-8 hover:scale-105 transition-transform cursor-pointer border-2 border-white/30">
+                <div class="text-5xl md:text-6xl text-white mb-3 md:mb-4 text-center">
                     <i class="fas fa-book"></i>
                 </div>
-                <h3 class="text-2xl font-bold text-white mb-2 text-center">API Документация</h3>
-                <p class="text-white/80 text-center">
+                <h3 class="text-xl md:text-2xl font-bold text-white mb-2 text-center">API Документация</h3>
+                <p class="text-sm md:text-base text-white/80 text-center">
                     REST API Reference v2.3
                 </p>
             </a>
@@ -1294,18 +1312,18 @@ function renderLandingPage() {
     </div>
 
     <!-- Network Graph Section -->
-    <div class="max-w-7xl mx-auto px-4 py-16">
-        <h2 class="text-3xl font-bold text-white mb-8 text-center">
-            <i class="fas fa-project-diagram mr-3"></i>
-            Граф рынка искусства
+    <div class="max-w-7xl mx-auto px-4 py-12 md:py-16">
+        <h2 class="text-2xl md:text-3xl font-bold text-white mb-6 md:mb-8 text-center px-4">
+            <i class="fas fa-project-diagram mr-2 md:mr-3"></i>
+            <span class="block sm:inline mt-2 sm:mt-0">Граф рынка искусства</span>
         </h2>
-        <div id="network-graph" class="bg-white rounded-xl shadow-2xl p-4" style="height: 600px;"></div>
-        <div class="mt-4 flex justify-center gap-4 text-white/80 text-sm">
-            <div><span class="inline-block w-4 h-4 rounded-full bg-purple-500 mr-2"></span>Художники</div>
-            <div><span class="inline-block w-4 h-4 rounded-full bg-green-500 mr-2"></span>Коллекционеры</div>
-            <div><span class="inline-block w-4 h-4 rounded-full bg-blue-500 mr-2"></span>Галереи</div>
-            <div><span class="inline-block w-4 h-4 rounded-full bg-yellow-500 mr-2"></span>Банки</div>
-            <div><span class="inline-block w-4 h-4 rounded-full bg-red-500 mr-2"></span>Эксперты</div>
+        <div id="network-graph" class="bg-white rounded-xl shadow-2xl p-2 md:p-4" style="height: 400px; md:height: 600px;"></div>
+        <div class="mt-4 flex flex-wrap justify-center gap-3 md:gap-4 text-white/80 text-xs md:text-sm px-4">
+            <div class="flex items-center"><span class="inline-block w-3 h-3 md:w-4 md:h-4 rounded-full bg-purple-500 mr-2"></span>Художники</div>
+            <div class="flex items-center"><span class="inline-block w-3 h-3 md:w-4 md:h-4 rounded-full bg-green-500 mr-2"></span>Коллекционеры</div>
+            <div class="flex items-center"><span class="inline-block w-3 h-3 md:w-4 md:h-4 rounded-full bg-blue-500 mr-2"></span>Галереи</div>
+            <div class="flex items-center"><span class="inline-block w-3 h-3 md:w-4 md:h-4 rounded-full bg-yellow-500 mr-2"></span>Банки</div>
+            <div class="flex items-center"><span class="inline-block w-3 h-3 md:w-4 md:h-4 rounded-full bg-red-500 mr-2"></span>Эксперты</div>
         </div>
     </div>
 
@@ -1424,10 +1442,11 @@ function renderLandingPage() {
             const token = localStorage.getItem('access_token');
             const user = localStorage.getItem('user');
             const authButtons = document.getElementById('authButtons');
+            const mobileAuthButtons = document.getElementById('mobileAuthButtons');
             
             if (token && user) {
                 const userData = JSON.parse(user);
-                authButtons.innerHTML = \`
+                const desktopHTML = \`
                     <a href="/profile" class="px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition backdrop-blur-sm">
                         <i class="fas fa-user-circle mr-2"></i>\${userData.full_name}
                     </a>
@@ -1438,8 +1457,21 @@ function renderLandingPage() {
                         <i class="fas fa-sign-out-alt mr-2"></i>Выйти
                     </button>
                 \`;
+                const mobileHTML = \`
+                    <a href="/profile" class="px-4 py-3 bg-white/20 text-white rounded-lg hover:bg-white/30 transition text-center">
+                        <i class="fas fa-user-circle mr-2"></i>\${userData.full_name}
+                    </a>
+                    <a href="/dashboard/\${userData.role}" class="px-4 py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition text-center">
+                        <i class="fas fa-tachometer-alt mr-2"></i>Дашборд
+                    </a>
+                    <button onclick="logout()" class="w-full px-4 py-3 bg-red-500/80 text-white rounded-lg hover:bg-red-600 transition">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Выйти
+                    </button>
+                \`;
+                authButtons.innerHTML = desktopHTML;
+                mobileAuthButtons.innerHTML = mobileHTML;
             } else {
-                authButtons.innerHTML = \`
+                const desktopHTML = \`
                     <a href="/auth" class="px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition backdrop-blur-sm">
                         <i class="fas fa-sign-in-alt mr-2"></i>Войти
                     </a>
@@ -1447,6 +1479,30 @@ function renderLandingPage() {
                         <i class="fas fa-user-plus mr-2"></i>Регистрация
                     </a>
                 \`;
+                const mobileHTML = \`
+                    <a href="/auth" class="px-4 py-3 bg-white/20 text-white rounded-lg hover:bg-white/30 transition text-center">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Войти
+                    </a>
+                    <a href="/auth" class="px-4 py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition text-center">
+                        <i class="fas fa-user-plus mr-2"></i>Регистрация
+                    </a>
+                \`;
+                authButtons.innerHTML = desktopHTML;
+                mobileAuthButtons.innerHTML = mobileHTML;
+            }
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            const btn = document.getElementById('mobileMenuBtn');
+            const isHidden = menu.classList.contains('hidden');
+            
+            if (isHidden) {
+                menu.classList.remove('hidden');
+                btn.innerHTML = '<i class="fas fa-times"></i>';
+            } else {
+                menu.classList.add('hidden');
+                btn.innerHTML = '<i class="fas fa-bars"></i>';
             }
         }
 
