@@ -22,6 +22,7 @@ import expert from './routes/expert';
 import analyticsExtended from './routes/analytics-extended';
 import mediaHub from './routes/media-hub';
 import graphSegmentation from './routes/graph-segmentation';
+import auth from './routes/auth';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -30,6 +31,9 @@ app.use('/api/*', cors());
 
 // Serve static files from /static/* path
 app.use('/static/*', serveStatic({ root: './public' }));
+
+// ========== AUTH ROUTES ==========
+app.route('/api/auth', auth);
 
 // ========== ROLE-SPECIFIC ROUTES ==========
 app.route('/api/artist', artist);
