@@ -29,8 +29,8 @@ const app = new Hono<{ Bindings: Env }>();
 // Enable CORS for API
 app.use('/api/*', cors());
 
-// Serve static files from /static/* path
-app.use('/static/*', serveStatic({ root: './public' }));
+// NOTE: Static files are served automatically by Cloudflare Pages from dist/
+// No need for serveStatic middleware - wrangler handles it
 
 // ========== AUTH ROUTES ==========
 app.route('/api/auth', auth);
@@ -796,6 +796,16 @@ app.get('/api-docs', (c) => {
   return c.redirect('/static/api-docs.html');
 });
 
+// Auth page (login/register)
+app.get('/auth', (c) => {
+  return c.html(renderAuthPage());
+});
+
+// User Profile page
+app.get('/profile', (c) => {
+  return c.html(renderProfilePage());
+});
+
 // Artwork detail page
 app.get('/artwork/:id', async (c) => {
   const artworkId = c.req.param('id');
@@ -1112,6 +1122,18 @@ function renderLandingPage() {
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 min-h-screen">
+    <!-- Top Navigation -->
+    <div class="bg-white/10 backdrop-blur-lg border-b border-white/20">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold text-white">
+                <i class="fas fa-palette mr-2"></i>Art Bank
+            </div>
+            <div id="authButtons" class="flex gap-3">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
     <div class="container mx-auto px-4 py-12">
         <div class="text-center mb-16">
             <h1 class="text-6xl font-bold text-white mb-4">
@@ -1396,6 +1418,47 @@ function renderLandingPage() {
                 document.getElementById('network-graph').innerHTML = 
                     '<div class="flex items-center justify-center h-full text-gray-500">Ошибка загрузки графа</div>';
             });
+
+        // Auth UI
+        function updateAuthUI() {
+            const token = localStorage.getItem('access_token');
+            const user = localStorage.getItem('user');
+            const authButtons = document.getElementById('authButtons');
+            
+            if (token && user) {
+                const userData = JSON.parse(user);
+                authButtons.innerHTML = \`
+                    <a href="/profile" class="px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition backdrop-blur-sm">
+                        <i class="fas fa-user-circle mr-2"></i>\${userData.full_name}
+                    </a>
+                    <a href="/dashboard/\${userData.role}" class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition">
+                        <i class="fas fa-tachometer-alt mr-2"></i>Дашборд
+                    </a>
+                    <button onclick="logout()" class="px-4 py-2 bg-red-500/80 text-white rounded-lg hover:bg-red-600 transition backdrop-blur-sm">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Выйти
+                    </button>
+                \`;
+            } else {
+                authButtons.innerHTML = \`
+                    <a href="/auth" class="px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition backdrop-blur-sm">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Войти
+                    </a>
+                    <a href="/auth" class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition">
+                        <i class="fas fa-user-plus mr-2"></i>Регистрация
+                    </a>
+                \`;
+            }
+        }
+
+        function logout() {
+            if (confirm('Вы уверены, что хотите выйти?')) {
+                localStorage.clear();
+                window.location.reload();
+            }
+        }
+
+        // Initialize auth UI
+        updateAuthUI();
     </script>
 </body>
 </html>
@@ -1703,4 +1766,195 @@ function renderDashboard(role: string) {
 </body>
 </html>
   `;
+}
+
+function renderAuthPage() {
+  return `
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход / Регистрация - Art Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen flex items-center justify-center">
+    <a href="/" class="absolute top-4 left-4 px-4 py-2 bg-white text-gray-700 rounded-lg shadow hover:shadow-lg transition">
+        <i class="fas fa-home mr-2"></i>На главную
+    </a>
+    <div class="w-full max-w-md p-6">
+        <div class="text-center mb-8">
+            <div class="text-6xl mb-4">
+                <i class="fas fa-palette text-indigo-600"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800">Art Bank</h1>
+            <p class="text-gray-600 mt-2">Граф-платформа рынка искусства</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-xl overflow-hidden">
+            <div class="flex border-b">
+                <button id="loginTab" class="flex-1 py-3 px-4 font-semibold text-indigo-600 border-b-2 border-indigo-600 transition" onclick="showTab('login')">
+                    Вход
+                </button>
+                <button id="registerTab" class="flex-1 py-3 px-4 font-semibold text-gray-500 hover:text-indigo-600 transition" onclick="showTab('register')">
+                    Регистрация
+                </button>
+            </div>
+            <div id="loginForm" class="p-6">
+                <form onsubmit="handleLogin(event)">
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-envelope mr-2"></i>Email
+                        </label>
+                        <input type="email" id="loginEmail" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="your@email.com">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-lock mr-2"></i>Пароль
+                        </label>
+                        <input type="password" id="loginPassword" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="••••••••">
+                    </div>
+                    <div id="loginError" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm"></div>
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Войти
+                    </button>
+                </form>
+                <div class="mt-4 p-3 bg-gray-50 rounded-lg text-xs">
+                    <p class="font-semibold text-gray-700 mb-1">Тестовый аккаунт:</p>
+                    <p class="text-gray-600">Email: test@artbank.io</p>
+                    <p class="text-gray-600">Пароль: Test123!</p>
+                </div>
+            </div>
+            <div id="registerForm" class="p-6 hidden">
+                <form onsubmit="handleRegister(event)">
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-user mr-2"></i>Полное имя
+                        </label>
+                        <input type="text" id="registerName" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Иван Иванов">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-envelope mr-2"></i>Email
+                        </label>
+                        <input type="email" id="registerEmail" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="your@email.com">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-users mr-2"></i>Роль
+                        </label>
+                        <select id="registerRole" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <option value="">Выберите роль...</option>
+                            <option value="artist">Художник</option>
+                            <option value="collector">Коллекционер</option>
+                            <option value="gallery">Галерея</option>
+                            <option value="bank">Банк</option>
+                            <option value="expert">Эксперт</option>
+                            <option value="public">Публичный доступ</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-lock mr-2"></i>Пароль
+                        </label>
+                        <input type="password" id="registerPassword" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Минимум 8 символов">
+                        <p class="text-xs text-gray-500 mt-1">Должен содержать: заглавную букву, строчную букву, цифру</p>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-lock mr-2"></i>Подтвердите пароль
+                        </label>
+                        <input type="password" id="registerPasswordConfirm" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Повторите пароль">
+                    </div>
+                    <div id="registerError" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm"></div>
+                    <button type="submit" class="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition">
+                        <i class="fas fa-user-plus mr-2"></i>Зарегистрироваться
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        function showTab(tab) {
+            if (tab === 'login') {
+                document.getElementById('loginForm').classList.remove('hidden');
+                document.getElementById('registerForm').classList.add('hidden');
+                document.getElementById('loginTab').classList.add('text-indigo-600', 'border-b-2', 'border-indigo-600');
+                document.getElementById('loginTab').classList.remove('text-gray-500');
+                document.getElementById('registerTab').classList.remove('text-indigo-600', 'border-b-2', 'border-indigo-600');
+                document.getElementById('registerTab').classList.add('text-gray-500');
+            } else {
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('registerForm').classList.remove('hidden');
+                document.getElementById('registerTab').classList.add('text-indigo-600', 'border-b-2', 'border-indigo-600');
+                document.getElementById('registerTab').classList.remove('text-gray-500');
+                document.getElementById('loginTab').classList.remove('text-indigo-600', 'border-b-2', 'border-indigo-600');
+                document.getElementById('loginTab').classList.add('text-gray-500');
+            }
+        }
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+            try {
+                const response = await axios.post('/api/auth/login', { email, password });
+                localStorage.setItem('access_token', response.data.tokens.access_token);
+                localStorage.setItem('refresh_token', response.data.tokens.refresh_token);
+                localStorage.setItem('user', JSON.stringify(response.data.user));
+                const role = response.data.user.role;
+                window.location.href = \`/dashboard/\${role}\`;
+            } catch (error) {
+                errorDiv.classList.remove('hidden');
+                errorDiv.textContent = error.response?.data?.error || 'Ошибка входа';
+            }
+        }
+        async function handleRegister(event) {
+            event.preventDefault();
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const role = document.getElementById('registerRole').value;
+            const password = document.getElementById('registerPassword').value;
+            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+            const errorDiv = document.getElementById('registerError');
+            if (password !== passwordConfirm) {
+                errorDiv.classList.remove('hidden');
+                errorDiv.textContent = 'Пароли не совпадают';
+                return;
+            }
+            try {
+                const response = await axios.post('/api/auth/register', {
+                    email, password, role, full_name: name
+                });
+                localStorage.setItem('access_token', response.data.tokens.access_token);
+                localStorage.setItem('refresh_token', response.data.tokens.refresh_token);
+                localStorage.setItem('user', JSON.stringify(response.data.user));
+                window.location.href = \`/dashboard/\${role}\`;
+            } catch (error) {
+                errorDiv.classList.remove('hidden');
+                const errorData = error.response?.data;
+                if (errorData?.details && Array.isArray(errorData.details)) {
+                    errorDiv.innerHTML = errorData.details.join('<br>');
+                } else {
+                    errorDiv.textContent = errorData?.error || 'Ошибка регистрации';
+                }
+            }
+        }
+        const token = localStorage.getItem('access_token');
+        const user = localStorage.getItem('user');
+        if (token && user) {
+            const userData = JSON.parse(user);
+            if (confirm('Вы уже вошли в систему. Перейти в личный кабинет?')) {
+                window.location.href = \`/dashboard/\${userData.role}\`;
+            }
+        }
+    </script>
+</body>
+</html>
+  `;
+}
+
+function renderProfilePage() {
+  return `Profile page - TODO: Add full implementation. For now, please use /auth to login.`;
 }

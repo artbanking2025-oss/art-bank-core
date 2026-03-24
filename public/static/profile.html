@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль - Art Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 min-h-screen">
+    <!-- Top Navigation -->
+    <div class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <a href="/" class="text-2xl font-bold text-indigo-600">
+                    <i class="fas fa-palette mr-2"></i>Art Bank
+                </a>
+                <span class="text-gray-400">|</span>
+                <h1 class="text-xl font-semibold text-gray-700">
+                    <i class="fas fa-user-circle mr-2"></i>Профиль
+                </h1>
+            </div>
+            <div class="flex gap-3">
+                <a href="/" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
+                    <i class="fas fa-home mr-2"></i>Главная
+                </a>
+                <button onclick="logout()" class="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Выйти
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto p-6">
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-12">
+            <div class="animate-spin inline-block w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full"></div>
+            <p class="text-gray-600 mt-4">Загрузка профиля...</p>
+        </div>
+
+        <!-- Profile Content -->
+        <div id="profileContent" class="hidden">
+            <!-- Profile Card -->
+            <div class="bg-white rounded-xl shadow-lg p-8 mb-6">
+                <div class="flex items-start justify-between mb-6">
+                    <div class="flex items-center gap-6">
+                        <div class="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-4xl font-bold">
+                            <span id="userInitials">AB</span>
+                        </div>
+                        <div>
+                            <h2 id="userName" class="text-3xl font-bold text-gray-800 mb-2">Имя пользователя</h2>
+                            <p id="userEmail" class="text-gray-600 mb-1">
+                                <i class="fas fa-envelope mr-2"></i>email@example.com
+                            </p>
+                            <div class="flex items-center gap-2 mt-2">
+                                <span id="userRoleBadge" class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-semibold">
+                                    <i class="fas fa-user-tag mr-1"></i>Роль
+                                </span>
+                                <span id="userStatusBadge" class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                                    <i class="fas fa-check-circle mr-1"></i>Активен
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="showEditForm()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                        <i class="fas fa-edit mr-2"></i>Редактировать
+                    </button>
+                </div>
+
+                <!-- Profile Stats -->
+                <div class="grid grid-cols-3 gap-4 pt-6 border-t">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-indigo-600" id="memberSince">-</div>
+                        <div class="text-sm text-gray-600 mt-1">Дата регистрации</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-purple-600" id="lastLogin">-</div>
+                        <div class="text-sm text-gray-600 mt-1">Последний вход</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-600" id="userId">-</div>
+                        <div class="text-sm text-gray-600 mt-1">ID пользователя</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Form (Hidden by default) -->
+            <div id="editForm" class="hidden bg-white rounded-xl shadow-lg p-8 mb-6">
+                <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                    <i class="fas fa-edit mr-2"></i>Редактировать профиль
+                </h3>
+                <form onsubmit="handleUpdateProfile(event)">
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-user mr-2"></i>Полное имя
+                        </label>
+                        <input 
+                            type="text" 
+                            id="editName" 
+                            required 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        >
+                    </div>
+
+                    <div id="updateError" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm"></div>
+                    <div id="updateSuccess" class="hidden mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm"></div>
+
+                    <div class="flex gap-3">
+                        <button 
+                            type="submit" 
+                            class="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition"
+                        >
+                            <i class="fas fa-save mr-2"></i>Сохранить
+                        </button>
+                        <button 
+                            type="button"
+                            onclick="hideEditForm()"
+                            class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition"
+                        >
+                            <i class="fas fa-times mr-2"></i>Отмена
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Change Password Form -->
+            <div class="bg-white rounded-xl shadow-lg p-8 mb-6">
+                <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                    <i class="fas fa-lock mr-2"></i>Изменить пароль
+                </h3>
+                <form onsubmit="handleChangePassword(event)">
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-key mr-2"></i>Текущий пароль
+                        </label>
+                        <input 
+                            type="password" 
+                            id="currentPassword" 
+                            required 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        >
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-lock mr-2"></i>Новый пароль
+                        </label>
+                        <input 
+                            type="password" 
+                            id="newPassword" 
+                            required 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        >
+                        <p class="text-xs text-gray-500 mt-1">
+                            Минимум 8 символов: заглавная буква, строчная буква, цифра
+                        </p>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-lock mr-2"></i>Подтвердите новый пароль
+                        </label>
+                        <input 
+                            type="password" 
+                            id="confirmPassword" 
+                            required 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        >
+                    </div>
+
+                    <div id="passwordError" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm"></div>
+                    <div id="passwordSuccess" class="hidden mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm"></div>
+
+                    <button 
+                        type="submit" 
+                        class="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition"
+                    >
+                        <i class="fas fa-check mr-2"></i>Изменить пароль
+                    </button>
+                </form>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-link mr-2"></i>Быстрые ссылки
+                </h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <a id="dashboardLink" href="/dashboard/collector" class="p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition text-center">
+                        <i class="fas fa-tachometer-alt text-2xl text-indigo-600 mb-2"></i>
+                        <div class="font-semibold text-gray-800">Мой дашборд</div>
+                    </a>
+                    <a href="/api-docs" class="p-4 border-2 border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition text-center">
+                        <i class="fas fa-book text-2xl text-purple-600 mb-2"></i>
+                        <div class="font-semibold text-gray-800">API Документация</div>
+                    </a>
+                    <a href="/dashboard/media" class="p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition text-center">
+                        <i class="fas fa-newspaper text-2xl text-green-600 mb-2"></i>
+                        <div class="font-semibold text-gray-800">Media Hub</div>
+                    </a>
+                    <a href="/dashboard/analytics" class="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition text-center">
+                        <i class="fas fa-chart-line text-2xl text-blue-600 mb-2"></i>
+                        <div class="font-semibold text-gray-800">Аналитика</div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+
+        // Check authentication
+        function checkAuth() {
+            const token = localStorage.getItem('access_token');
+            const user = localStorage.getItem('user');
+            
+            if (!token || !user) {
+                window.location.href = '/auth';
+                return false;
+            }
+            
+            currentUser = JSON.parse(user);
+            return true;
+        }
+
+        // Load user profile
+        async function loadProfile() {
+            if (!checkAuth()) return;
+
+            try {
+                const token = localStorage.getItem('access_token');
+                const response = await axios.get('/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const user = response.data;
+                currentUser = user;
+
+                // Update localStorage
+                localStorage.setItem('user', JSON.stringify(user));
+
+                // Display profile
+                displayProfile(user);
+                
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('profileContent').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                if (error.response?.status === 401) {
+                    // Token expired, redirect to login
+                    localStorage.clear();
+                    window.location.href = '/auth';
+                } else {
+                    alert('Ошибка загрузки профиля');
+                }
+            }
+        }
+
+        // Display profile data
+        function displayProfile(user) {
+            // Initials
+            const names = user.full_name.split(' ');
+            const initials = names.map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            document.getElementById('userInitials').textContent = initials;
+
+            // Basic info
+            document.getElementById('userName').textContent = user.full_name;
+            document.getElementById('userEmail').textContent = user.email;
+            
+            // Role badge
+            const roleNames = {
+                'artist': 'Художник',
+                'collector': 'Коллекционер',
+                'gallery': 'Галерея',
+                'bank': 'Банк',
+                'expert': 'Эксперт',
+                'admin': 'Администратор',
+                'public': 'Публичный'
+            };
+            document.getElementById('userRoleBadge').innerHTML = 
+                `<i class="fas fa-user-tag mr-1"></i>${roleNames[user.role] || user.role}`;
+
+            // Stats
+            const createdDate = new Date(user.created_at * 1000);
+            document.getElementById('memberSince').textContent = createdDate.toLocaleDateString('ru-RU');
+            
+            if (user.last_login_at) {
+                const lastLoginDate = new Date(user.last_login_at * 1000);
+                document.getElementById('lastLogin').textContent = lastLoginDate.toLocaleDateString('ru-RU');
+            } else {
+                document.getElementById('lastLogin').textContent = 'Впервые';
+            }
+            
+            document.getElementById('userId').textContent = user.id.substring(0, 8) + '...';
+
+            // Dashboard link
+            document.getElementById('dashboardLink').href = `/dashboard/${user.role}`;
+        }
+
+        // Show edit form
+        function showEditForm() {
+            document.getElementById('editName').value = currentUser.full_name;
+            document.getElementById('editForm').classList.remove('hidden');
+            document.getElementById('updateError').classList.add('hidden');
+            document.getElementById('updateSuccess').classList.add('hidden');
+        }
+
+        // Hide edit form
+        function hideEditForm() {
+            document.getElementById('editForm').classList.add('hidden');
+        }
+
+        // Handle profile update
+        async function handleUpdateProfile(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('editName').value;
+            const token = localStorage.getItem('access_token');
+            const errorDiv = document.getElementById('updateError');
+            const successDiv = document.getElementById('updateSuccess');
+            
+            try {
+                const response = await axios.put('/api/auth/profile', 
+                    { full_name: name },
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    }
+                );
+                
+                // Update display
+                currentUser.full_name = name;
+                localStorage.setItem('user', JSON.stringify(currentUser));
+                displayProfile(currentUser);
+                
+                errorDiv.classList.add('hidden');
+                successDiv.classList.remove('hidden');
+                successDiv.textContent = 'Профиль успешно обновлён!';
+                
+                setTimeout(() => {
+                    hideEditForm();
+                }, 2000);
+                
+            } catch (error) {
+                successDiv.classList.add('hidden');
+                errorDiv.classList.remove('hidden');
+                errorDiv.textContent = error.response?.data?.error || 'Ошибка обновления профиля';
+            }
+        }
+
+        // Handle password change
+        async function handleChangePassword(event) {
+            event.preventDefault();
+            
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const token = localStorage.getItem('access_token');
+            const errorDiv = document.getElementById('passwordError');
+            const successDiv = document.getElementById('passwordSuccess');
+            
+            // Validate password match
+            if (newPassword !== confirmPassword) {
+                errorDiv.classList.remove('hidden');
+                errorDiv.textContent = 'Новые пароли не совпадают';
+                return;
+            }
+            
+            try {
+                await axios.post('/api/auth/change-password', 
+                    {
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    },
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    }
+                );
+                
+                // Clear form
+                document.getElementById('currentPassword').value = '';
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+                
+                errorDiv.classList.add('hidden');
+                successDiv.classList.remove('hidden');
+                successDiv.textContent = 'Пароль успешно изменён!';
+                
+                setTimeout(() => {
+                    successDiv.classList.add('hidden');
+                }, 3000);
+                
+            } catch (error) {
+                successDiv.classList.add('hidden');
+                errorDiv.classList.remove('hidden');
+                const errorData = error.response?.data;
+                if (errorData?.details && Array.isArray(errorData.details)) {
+                    errorDiv.innerHTML = errorData.details.join('<br>');
+                } else {
+                    errorDiv.textContent = errorData?.error || 'Ошибка изменения пароля';
+                }
+            }
+        }
+
+        // Logout
+        function logout() {
+            if (confirm('Вы уверены, что хотите выйти?')) {
+                localStorage.clear();
+                window.location.href = '/auth';
+            }
+        }
+
+        // Initialize
+        loadProfile();
+    </script>
+</body>
+</html>
