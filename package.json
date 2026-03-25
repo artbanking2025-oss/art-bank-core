@@ -10,16 +10,25 @@
     "deploy:prod": "npm run build && wrangler pages deploy dist --project-name art-bank --branch main",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
     "db:create": "wrangler d1 create art-bank-db",
+    "db:list": "wrangler d1 list",
+    "db:info": "wrangler d1 info art-bank-db",
     "db:migrate:local": "wrangler d1 migrations apply art-bank-db --local",
     "db:migrate:prod": "wrangler d1 migrations apply art-bank-db",
-    "db:seed": "wrangler d1 execute art-bank-db --local --file=./seed.sql",
+    "db:seed:local": "wrangler d1 execute art-bank-db --local --file=./seed.sql",
+    "db:seed:prod": "wrangler d1 execute art-bank-db --file=./seed.sql",
     "db:console:local": "wrangler d1 execute art-bank-db --local",
     "db:console:prod": "wrangler d1 execute art-bank-db",
-    "db:reset": "rm -rf .wrangler/state/v3/d1 && npm run db:migrate:local && npm run db:seed",
+    "db:backup": "wrangler d1 execute art-bank-db --command='SELECT * FROM users' --json > backup_users.json",
+    "db:reset": "rm -rf .wrangler/state/v3/d1 && npm run db:migrate:local && npm run db:seed:local",
+    "secret:put": "wrangler secret put",
+    "secret:list": "wrangler secret list --project-name art-bank",
+    "logs:tail": "wrangler pages deployment tail --project-name art-bank",
     "clean-port": "fuser -k 3000/tcp 2>/dev/null || true",
     "whoami": "wrangler whoami",
     "pages:create": "wrangler pages project create art-bank --production-branch main",
-    "pages:list": "wrangler pages project list"
+    "pages:list": "wrangler pages project list",
+    "pages:delete": "wrangler pages project delete art-bank",
+    "test:prod": "curl https://art-bank.pages.dev/api/health/circuit-breakers"
   },
   "dependencies": {
     "hono": "^4.12.7"
