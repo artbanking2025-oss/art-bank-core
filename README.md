@@ -1,25 +1,26 @@
-# Art Bank Core v2.6 - Art-OS: Гибридная платформа для арт-рынка 🚀
+# Art Bank Core v2.7 - Art-OS: Защищённая платформа для арт-рынка 🚀🔒
 
 ## 📊 Статус проекта
 
-**Версия**: v2.6 ✨  
-**Статус**: ✅ **PRODUCTION READY**  
-**Последнее обновление**: 2026-03-24  
-**Completion**: 95% (JWT Auth + Mobile UI готовы)
+**Версия**: v2.7 ✨  
+**Статус**: ✅ **PRODUCTION READY + API PROTECTION**  
+**Последнее обновление**: 2026-03-25  
+**Completion**: 97% (JWT Auth + API Protection + Mobile UI)
 
 ### 🎯 Ключевые метрики
 
-- **63+ API Endpoints** (57 базовых + 6 auth)
+- **63+ API Endpoints** (40+ защищённых JWT + 15+ публичных)
 - **11 полнофункциональных страниц** (9 dashboards + Auth + Profile)
-- **~6,450 строк кода** (TypeScript)
+- **~6,850 строк кода** (TypeScript + 400 строк middleware)
 - **19 таблиц БД** (16 core + 3 auth)
-- **29 Git commits**
-- **23 TypeScript файла**
-- **Bundle Size**: 167 KB
+- **30 Git commits**
+- **24 TypeScript файла** (+ auth-middleware.ts)
+- **Bundle Size**: 187.5 KB (+ 24 KB middleware)
 
 ### 🌟 Уникальные фичи
 
 ✅ **JWT Authentication** - полная система аутентификации (24h access + 7d refresh)  
+✅ **🔒 API Protection** - **НОВОЕ:** 40+ защищённых endpoints с JWT middleware  
 ✅ **Mobile UI** - responsive design для всех устройств (mobile-first)  
 ✅ **Price Corridor API** - математическая модель коридора цены  
 ✅ **3 Market Factors** - институциональная поддержка, хайп, ликвидность  
@@ -27,7 +28,7 @@
 ✅ **Graph Segmentation** - многомерная сегментация (время × стиль × география)  
 ✅ **3D Visualization** - Three.js интерактивная визуализация давления  
 ✅ **Circuit Breaker / Saga / STOP** - паттерны надёжности  
-✅ **CSV/JSON Export** - универсальный экспорт данных  
+✅ **CSV/JSON Export** - универсальный экспорт данных (защищён JWT)  
 ✅ **Interactive API Docs** - документация с примерами  
 
 ---
@@ -52,7 +53,7 @@
 
 ### Auth UI Pages
 - `/auth` - Login/Register page with tab switcher
-- `/profile` - User profile management (stub)
+- `/profile` - Full user profile management (edit name, change password, stats)
 - Mobile menu with auth state awareness
 
 ### Database Schema
@@ -67,6 +68,84 @@ user_sessions (id, user_id, device_info, ip_address, last_activity_at, created_a
 Email: test@artbank.io
 Password: Test123!
 Role: Collector
+```
+
+---
+
+## 🔒 API Protection (v2.7+) **НОВОЕ!**
+
+### Middleware Functions
+Реализованы 3 типа middleware для защиты API:
+
+1. **authMiddleware** - требует валидный JWT token
+2. **roleMiddleware** - требует определённую роль пользователя
+3. **optionalAuthMiddleware** - валидирует токен, если он присутствует
+
+### Защищённые Endpoints (JWT required) 🔐
+
+**CRUD операции (POST/PUT/PATCH/DELETE)**:
+- `/api/nodes`, `/api/edges`, `/api/artworks`, `/api/transactions` (создание/изменение)
+- `/api/validations`, `/api/media`, `/api/exhibitions` (POST)
+- `/api/artworks/:id/tags` (POST)
+
+**Role-Specific Routes** (все методы защищены):
+- `/api/artist/*` - Artist dashboard & operations
+- `/api/collector/*` - Collector portfolio & purchases
+- `/api/gallery/*` - Gallery exhibitions & sales
+- `/api/bank/*` - Bank-backed lending & validation
+- `/api/expert/*` - Expert certifications
+
+**Analytics & Extended Features**:
+- `/api/analytics-extended/*` - Advanced analytics
+- `/api/analytics/fair-price` - Price corridor calculation
+- `/api/analytics/risk-score` - Risk assessment
+- `/api/media-hub/*` - Media analysis & sentiment
+- `/api/graph-segmentation/*` - Graph segmentation
+
+**Data Export & Admin**:
+- `/api/export/*` - CSV/JSON export (nodes, artworks, transactions, validations)
+- `/api/admin/*` - Emergency stop, circuit breaker management
+- `/api/events`, `/api/saga-logs` - Internal monitoring
+
+**Total**: **40+ protected endpoints** ✅
+
+### Публичные Endpoints (no auth required) 🌐
+
+**Read-only Data Access**:
+- `/api/graph-data` - Network graph for visualization
+- `/api/dashboard/stats`, `/api/dashboard/graph` - Dashboard statistics
+- `/api/nodes`, `/api/edges`, `/api/artworks`, `/api/transactions` (GET)
+- `/api/validations` (GET)
+- `/api/artworks/:id/*`, `/api/galleries/:id/*`, `/api/tags/*` (GET)
+- `/api/health/circuit-breakers` - System health status
+
+**Total**: **15+ public endpoints** ✅
+
+### Error Codes
+```json
+{
+  "AUTH_REQUIRED": "Missing or invalid Authorization header",
+  "INVALID_TOKEN": "Invalid or expired token",
+  "TOKEN_EXPIRED": "Token has expired",
+  "INSUFFICIENT_PERMISSIONS": "User role doesn't have access",
+  "AUTH_ERROR": "Internal authentication error"
+}
+```
+
+### Usage Example
+```bash
+# 1. Login to get token
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@artbank.io","password":"Test123!"}'
+
+# Response: { "tokens": { "access_token": "eyJ...", ... } }
+
+# 2. Use token for protected endpoint
+curl -X POST http://localhost:3000/api/nodes \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <access_token>" \
+  -d '{"node_type":"artist","name":"New Artist","trust_level":0.8}'
 ```
 
 ---
@@ -185,6 +264,67 @@ Role: Collector
 - **Influence Score**: 0.0-1.0 влияние на рынок
 - **Упоминания**: Связь медиа с произведениями/художниками
 - **API**: `POST /api/media`, `GET /api/media/by-entity`
+
+---
+
+## 🎯 Целевая архитектура (Roadmap 2026) **НОВОЕ**
+
+> На основе документа **"Вся_платформа_Технологии_260325_001929_1.docx"**
+
+### Эволюция: Монолит → Микросервисы
+
+**Сейчас (v2.7)**: Монолитное Hono приложение  
+**Цель**: Event-driven микросервисы с Central Router
+
+### 🧭 Central Router + 4 Core Kernels
+
+#### **Central Router** (Go/TypeScript + Kafka)
+- Event Bus для асинхронной коммуникации
+- JWT validation для B2B2C партнёров  
+- Параллельная диспетчеризация запросов
+- Rate limiting, DDoS protection
+
+#### **1. Analytic Core** (Python/Pandas) ✅ *Частично готов*
+- KDE для price corridor
+- Fair Value + Risk Score calculation
+- **Статус**: Analytics Service уже работает на порту 5000
+
+#### **2. Transaction Hub** (Go + Saga)
+- Saga orchestration  
+- STOP signal processing
+- Compensating transactions
+- **Статус**: Saga Pattern реализован в TypeScript, миграция на Go планируется
+
+#### **3. Graph Data Service** (Neo4j/Memgraph)
+- Cypher queries для провенанса
+- Graph algorithms для anomaly detection
+- **Статус**: D1 (SQLite) используется как прототип
+
+#### **4. Media Hub** (Python NLP) ✅ *Частично готов*
+- Sentiment analysis
+- Price impact prediction
+- **Статус**: Базовая реализация в `/api/media-hub`
+
+### Гибридная модель (Graph + Relational)
+
+**Проблема**: Графовые БД не гарантируют ACID  
+**Решение**: Link-таблицы для критичных операций
+
+```sql
+ownership_link (id, artwork_id, owner_node_id, acquisition_date, price, status)
+transaction_link (id, from, to, artwork_id, price, saga_id, status)
+representation_link (id, artwork_id, artist_node_id, contribution_type)
+mention_link (id, media_id, entity_type, entity_id, sentiment_score)
+```
+
+### Roadmap миграции
+
+- **Фаза 1** (1-2 нед): ✅ JWT Auth + API Protection
+- **Фаза 2** (2-4 нед): Рефакторинг на микросервисы, Central Router
+- **Фаза 3** (2-4 нед): Neo4j + link-tables, Kafka events
+- **Фаза 4** (1-2 нед): Production deployment + мониторинг
+
+---
 
 ## 🚀 Текущий статус
 
