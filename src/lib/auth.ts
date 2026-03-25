@@ -74,10 +74,11 @@ export async function generateTokenPair(payload: UserPayload): Promise<TokenPair
  */
 export async function verifyToken(token: string): Promise<UserPayload | null> {
   try {
-    const payload = await verify(token, JWT_SECRET);
+    // NOTE: hono/jwt requires 'alg' option for verification
+    const payload = await verify(token, JWT_SECRET, 'HS256');
     return payload as UserPayload;
   } catch (error) {
-    console.error('Token verification failed:', error);
+    console.error('[verifyToken] Token verification failed:', error);
     return null;
   }
 }

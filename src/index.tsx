@@ -23,6 +23,7 @@ import analyticsExtended from './routes/analytics-extended';
 import mediaHub from './routes/media-hub';
 import graphSegmentation from './routes/graph-segmentation';
 import auth from './routes/auth';
+import { authMiddleware, optionalAuthMiddleware } from './middleware/auth-middleware';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -32,36 +33,50 @@ app.use('/api/*', cors());
 // NOTE: Static files are served automatically by Cloudflare Pages from dist/
 // No need for serveStatic middleware - wrangler handles it
 
-// ========== AUTH ROUTES ==========
+// ========== AUTH ROUTES (PUBLIC) ==========
 app.route('/api/auth', auth);
 
-// ========== ROLE-SPECIFIC ROUTES ==========
+// ========== PROTECTED ROLE-SPECIFIC ROUTES ==========
+// Apply JWT middleware to all role-specific routes
+app.use('/api/artist/*', authMiddleware);
+app.use('/api/collector/*', authMiddleware);
+app.use('/api/gallery/*', authMiddleware);
+app.use('/api/bank/*', authMiddleware);
+app.use('/api/expert/*', authMiddleware);
+
 app.route('/api/artist', artist);
 app.route('/api/collector', collector);
 app.route('/api/gallery', gallery);
 app.route('/api/bank', bank);
 app.route('/api/expert', expert);
 
-// ========== ANALYTICS EXTENDED ROUTES ==========
+// ========== ANALYTICS EXTENDED ROUTES (PROTECTED) ==========
+app.use('/api/analytics-extended/*', authMiddleware);
 app.route('/api/analytics-extended', analyticsExtended);
 
-// ========== MEDIA HUB ROUTES ==========
+// ========== MEDIA HUB ROUTES (PROTECTED) ==========
+app.use('/api/media-hub/*', authMiddleware);
 app.route('/api/media-hub', mediaHub);
 
-// ========== GRAPH SEGMENTATION ROUTES ==========
+// ========== GRAPH SEGMENTATION ROUTES (PROTECTED) ==========
+app.use('/api/graph-segmentation/*', authMiddleware);
 app.route('/api/graph-segmentation', graphSegmentation);
 
 // ========== API ROUTES ==========
 
-// Graph Data API (for visualization)
-app.get('/api/graph-data', async (c) => {
+// ===== PUBLIC ENDPOINTS (no auth required) =====
+
+// Graph Data API (for visualization on landing page)
+app.get('/api/graph-data', optionalAuthMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const graphData = await db.getGraphData();
   return c.json(graphData);
 });
 
-// Export API - Universal data export in CSV or JSON
-app.get('/api/export/:type', async (c) => {
+// ===== PROTECTED ENDPOINTS (auth required) =====
+
+// Export API - Universal data export in CSV or JSON (PROTECTED)
+app.get('/api/export/:type', authMiddleware, async (c) => {
   const exportType = c.req.param('type'); // 'nodes', 'artworks', 'transactions', 'validations'
   const format = c.req.query('format') || 'json'; // 'json' or 'csv'
   const db = new ArtBankDB(c.env.DB);
@@ -119,8 +134,8 @@ app.get('/api/export/:type', async (c) => {
   }
 });
 
-// Nodes API
-app.get('/api/nodes', async (c) => {
+// Nodes API (public read, protected write)
+app.get('/api/nodes', optionalAuthMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const type = c.req.query('type');
   
@@ -128,7 +143,7 @@ app.get('/api/nodes', async (c) => {
   return c.json({ nodes });
 });
 
-app.get('/api/nodes/:id', async (c) => {
+app.get('/api/nodes/:id', optionalAuthMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const node = await db.getNode(c.req.param('id'));
   
@@ -139,7 +154,7 @@ app.get('/api/nodes/:id', async (c) => {
   return c.json({ node });
 });
 
-app.post('/api/nodes', async (c) => {
+app.post('/api/nodes', authMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const data = await c.req.json();
   
@@ -152,8 +167,8 @@ app.post('/api/nodes', async (c) => {
   }
 });
 
-// Edges API
-app.get('/api/edges', async (c) => {
+// Edges API (public read, protected write)
+app.get('/api/edges', optionalAuthMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const nodeId = c.req.query('node_id');
   
@@ -161,7 +176,7 @@ app.get('/api/edges', async (c) => {
   return c.json({ edges });
 });
 
-app.post('/api/edges', async (c) => {
+app.post('/api/edges', authMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const data = await c.req.json();
   
@@ -177,8 +192,8 @@ app.post('/api/edges', async (c) => {
   }
 });
 
-// Artworks API
-app.get('/api/artworks', async (c) => {
+// Artworks API (public read, protected write)
+app.get('/api/artworks', optionalAuthMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const artistId = c.req.query('artist_id');
   const ownerId = c.req.query('owner_id');
@@ -195,7 +210,7 @@ app.get('/api/artworks', async (c) => {
   return c.json({ artworks });
 });
 
-app.get('/api/artworks/:id', async (c) => {
+app.get('/api/artworks/:id', optionalAuthMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const artwork = await db.getArtwork(c.req.param('id'));
   
@@ -206,7 +221,7 @@ app.get('/api/artworks/:id', async (c) => {
   return c.json({ artwork });
 });
 
-app.post('/api/artworks', async (c) => {
+app.post('/api/artworks', authMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const data = await c.req.json();
   
@@ -231,8 +246,8 @@ app.post('/api/artworks', async (c) => {
   }
 });
 
-// Transactions API
-app.get('/api/transactions', async (c) => {
+// Transactions API (public read, protected write)
+app.get('/api/transactions', optionalAuthMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const nodeId = c.req.query('node_id');
   const artworkId = c.req.query('artwork_id');
@@ -249,7 +264,7 @@ app.get('/api/transactions', async (c) => {
   return c.json({ transactions });
 });
 
-app.post('/api/transactions', async (c) => {
+app.post('/api/transactions', authMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const data = await c.req.json();
   
@@ -283,7 +298,7 @@ app.post('/api/transactions', async (c) => {
   }
 });
 
-app.patch('/api/transactions/:id/status', async (c) => {
+app.patch('/api/transactions/:id/status', authMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const { status } = await c.req.json();
   
@@ -296,7 +311,7 @@ app.patch('/api/transactions/:id/status', async (c) => {
 });
 
 // Saga-based transaction endpoint (с автоматическим откатом при ошибках)
-app.post('/api/transactions/saga', async (c) => {
+app.post('/api/transactions/saga', authMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const data = await c.req.json();
   
@@ -362,7 +377,7 @@ app.post('/api/transactions/saga', async (c) => {
 });
 
 // Analytics Integration API with Circuit Breaker
-app.post('/api/analytics/fair-price', async (c) => {
+app.post('/api/analytics/fair-price', authMiddleware, async (c) => {
   const data = await c.req.json();
   const analyticsUrl = c.env.ANALYTICS_SERVICE_URL || 'http://localhost:8000';
   
@@ -413,7 +428,7 @@ app.post('/api/analytics/fair-price', async (c) => {
   }
 });
 
-app.post('/api/analytics/risk-score', async (c) => {
+app.post('/api/analytics/risk-score', authMiddleware, async (c) => {
   const data = await c.req.json();
   const analyticsUrl = c.env.ANALYTICS_SERVICE_URL || 'http://localhost:8000';
   
@@ -455,7 +470,7 @@ app.post('/api/analytics/risk-score', async (c) => {
 });
 
 // Circuit Breaker Status endpoint
-app.get('/api/analytics/status', (c) => {
+app.get('/api/analytics/status', optionalAuthMiddleware, (c) => {
   const stats = circuitBreakers.analyticsService.getStats();
   return c.json({
     service: 'Analytics Service',
@@ -464,8 +479,8 @@ app.get('/api/analytics/status', (c) => {
   });
 });
 
-// Validations API
-app.get('/api/validations', async (c) => {
+// Validations API (public read, protected write)
+app.get('/api/validations', optionalAuthMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const artworkId = c.req.query('artwork_id');
   const expertId = c.req.query('expert_id');
@@ -482,7 +497,7 @@ app.get('/api/validations', async (c) => {
   return c.json({ validations });
 });
 
-app.post('/api/validations', async (c) => {
+app.post('/api/validations', authMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const data = await c.req.json();
   
@@ -518,7 +533,7 @@ app.post('/api/validations', async (c) => {
 });
 
 // Events API (для мониторинга событийной архитектуры)
-app.get('/api/events', async (c) => {
+app.get('/api/events', authMiddleware, async (c) => {
   const limit = parseInt(c.req.query('limit') || '50');
   const type = c.req.query('type');
   
@@ -532,7 +547,7 @@ app.get('/api/events', async (c) => {
 // ========== MEDIA HUB API ==========
 
 // Create media item (news, article, social post)
-app.post('/api/media', async (c) => {
+app.post('/api/media', authMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const data = await c.req.json();
   
@@ -571,7 +586,7 @@ app.post('/api/media', async (c) => {
 });
 
 // Get media by entity (artwork, artist, etc.)
-app.get('/api/media/by-entity', async (c) => {
+app.get('/api/media/by-entity', optionalAuthMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const entityType = c.req.query('entity_type');
   const entityId = c.req.query('entity_id');
@@ -587,7 +602,7 @@ app.get('/api/media/by-entity', async (c) => {
 // ========== JUNCTION TABLES API ==========
 
 // Add exhibition
-app.post('/api/exhibitions', async (c) => {
+app.post('/api/exhibitions', authMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const data = await c.req.json();
   
@@ -600,7 +615,7 @@ app.post('/api/exhibitions', async (c) => {
 });
 
 // Get exhibitions by artwork
-app.get('/api/artworks/:id/exhibitions', async (c) => {
+app.get('/api/artworks/:id/exhibitions', optionalAuthMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const artworkId = c.req.param('id');
   
@@ -609,7 +624,7 @@ app.get('/api/artworks/:id/exhibitions', async (c) => {
 });
 
 // Get exhibitions by gallery
-app.get('/api/galleries/:id/exhibitions', async (c) => {
+app.get('/api/galleries/:id/exhibitions', optionalAuthMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const galleryId = c.req.param('id');
   
@@ -618,7 +633,7 @@ app.get('/api/galleries/:id/exhibitions', async (c) => {
 });
 
 // Add tags to artwork
-app.post('/api/artworks/:id/tags', async (c) => {
+app.post('/api/artworks/:id/tags', authMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const artworkId = c.req.param('id');
   const { tag_id, relevance } = await c.req.json();
@@ -632,7 +647,7 @@ app.post('/api/artworks/:id/tags', async (c) => {
 });
 
 // Get artwork tags
-app.get('/api/artworks/:id/tags', async (c) => {
+app.get('/api/artworks/:id/tags', optionalAuthMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const artworkId = c.req.param('id');
   
@@ -641,7 +656,7 @@ app.get('/api/artworks/:id/tags', async (c) => {
 });
 
 // Get artworks by tag
-app.get('/api/tags/:id/artworks', async (c) => {
+app.get('/api/tags/:id/artworks', optionalAuthMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const tagId = c.req.param('id');
   
@@ -650,7 +665,7 @@ app.get('/api/tags/:id/artworks', async (c) => {
 });
 
 // Get price history
-app.get('/api/artworks/:id/price-history', async (c) => {
+app.get('/api/artworks/:id/price-history', optionalAuthMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const artworkId = c.req.param('id');
   const limit = parseInt(c.req.query('limit') || '100');
@@ -660,7 +675,7 @@ app.get('/api/artworks/:id/price-history', async (c) => {
 });
 
 // Get Saga logs
-app.get('/api/saga-logs', async (c) => {
+app.get('/api/saga-logs', authMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const limit = parseInt(c.req.query('limit') || '50');
   
@@ -669,7 +684,7 @@ app.get('/api/saga-logs', async (c) => {
 });
 
 // Circuit Breaker Monitoring API
-app.get('/api/health/circuit-breakers', async (c) => {
+app.get('/api/health/circuit-breakers', optionalAuthMiddleware, async (c) => {
   const stats = {
     analytics_service: circuitBreakers.analyticsService.getStats(),
     timestamp: new Date().toISOString(),
@@ -680,7 +695,7 @@ app.get('/api/health/circuit-breakers', async (c) => {
 });
 
 // STOP Mechanism - Force Circuit Breaker Open (экстренное отключение сервиса)
-app.post('/api/admin/emergency-stop', async (c) => {
+app.post('/api/admin/emergency-stop', authMiddleware, async (c) => {
   const { service, reason } = await c.req.json();
   
   if (!service || !reason) {
@@ -716,7 +731,7 @@ app.post('/api/admin/emergency-stop', async (c) => {
 });
 
 // Reset Circuit Breaker (восстановление после STOP)
-app.post('/api/admin/reset-circuit-breaker', async (c) => {
+app.post('/api/admin/reset-circuit-breaker', authMiddleware, async (c) => {
   const { service } = await c.req.json();
   
   if (!service) {
@@ -762,7 +777,7 @@ app.get('/api/dashboard/graph', async (c) => {
   return c.json(graphData);
 });
 
-app.get('/api/nodes/:id/activity', async (c) => {
+app.get('/api/nodes/:id/activity', optionalAuthMiddleware, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const limit = parseInt(c.req.query('limit') || '50');
   const activity = await db.getActivityByNode(c.req.param('id'), limit);
