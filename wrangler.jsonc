@@ -13,4 +13,14 @@
       "database_id": "local-art-bank-db"
     }
   ]
+  // Uncomment after creating KV namespace:
+  // npx wrangler kv:namespace create RATE_LIMIT
+  // npx wrangler kv:namespace create RATE_LIMIT --preview
+  // "kv_namespaces": [
+  //   {
+  //     "binding": "RATE_LIMIT",
+  //     "id": "your-production-kv-id",
+  //     "preview_id": "your-preview-kv-id"
+  //   }
+  // ]
 }

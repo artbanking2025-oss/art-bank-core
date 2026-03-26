@@ -93,6 +93,7 @@ export interface UserSession {
 export interface Env {
   DB: D1Database;
   ANALYTICS_SERVICE_URL?: string;
+  RATE_LIMIT?: KVNamespace;  // KV для rate limiting (опционально)
 }
 
 // API Request/Response types
