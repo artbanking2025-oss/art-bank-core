@@ -10,9 +10,11 @@
 
 ### 1. Cloudflare Account Setup
 - ✅ Active Cloudflare account
-- ✅ Cloudflare API Token with permissions:
-  - Account > Cloudflare Pages > Edit
-  - Account > D1 > Edit
+- ✅ Cloudflare API Token with **required permissions**:
+  - ✅ **Account > Cloudflare Pages > Edit** (обязательно)
+  - ✅ **Account > D1 > Edit** (для базы данных)
+  - ✅ **Account Resources** → Include: `Your Account Name`
+  - ⚠️ **ВАЖНО**: Используйте шаблон "Edit Cloudflare Workers" или создайте Custom Token с указанными правами
   
 ### 2. Local Development Environment
 - ✅ Node.js 18+ installed
@@ -40,13 +42,23 @@
 4. Click **Save**
 
 #### Option B: Manual Configuration
-1. Go to Cloudflare Dashboard → My Profile → API Tokens
-2. Create Token with template "Edit Cloudflare Workers"
-3. Copy the token
-4. Set environment variable:
+1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens) → My Profile → API Tokens
+2. Click **Create Token** → Use template **"Edit Cloudflare Workers"**
+3. **Verify permissions**:
+   - ✅ Account > Cloudflare Pages > Edit
+   - ✅ Account > D1 > Edit
+   - ✅ Account Resources → Include: Your Account
+4. Click **Continue to summary** → **Create Token**
+5. Copy the token and set environment variable:
    ```bash
    export CLOUDFLARE_API_TOKEN="your-token-here"
    ```
+
+⚠️ **Troubleshooting Authentication Error**:
+If you get `Authentication error [code: 10000]`:
+- Verify token has **Cloudflare Pages** permissions (not just Workers)
+- Check **Account Resources** includes your account
+- Try recreating token with "Edit Cloudflare Workers" template
 
 ### Step 2: Verify Authentication
 
