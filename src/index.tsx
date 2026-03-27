@@ -24,8 +24,13 @@ import mediaHub from './routes/media-hub';
 import graphSegmentation from './routes/graph-segmentation';
 import auth from './routes/auth';
 import { authMiddleware, optionalAuthMiddleware } from './middleware/auth-middleware';
+import { rateLimitMiddleware, strictRateLimitMiddleware } from './middleware/rate-limit';
 
 const app = new Hono<{ Bindings: Env }>();
+
+// ========== GLOBAL MIDDLEWARE ==========
+// Rate Limiting (applies to all API routes)
+app.use('/api/*', rateLimitMiddleware);
 
 // Enable CORS for API
 app.use('/api/*', cors());
@@ -34,6 +39,8 @@ app.use('/api/*', cors());
 // No need for serveStatic middleware - wrangler handles it
 
 // ========== AUTH ROUTES (PUBLIC) ==========
+// Apply strict rate limiting to auth endpoints (10 req/min)
+app.use('/api/auth/*', strictRateLimitMiddleware);
 app.route('/api/auth', auth);
 
 // ========== PROTECTED ROLE-SPECIFIC ROUTES ==========
