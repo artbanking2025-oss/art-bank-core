@@ -3,24 +3,25 @@
 ## 📊 Статус проекта
 
 **Версия**: v2.7 ✨  
-**Статус**: ✅ **PRODUCTION READY + API PROTECTION**  
-**Последнее обновление**: 2026-03-25  
-**Completion**: 97% (JWT Auth + API Protection + Mobile UI)
+**Статус**: ✅ **PRODUCTION READY + API PROTECTION + RATE LIMITING**  
+**Последнее обновление**: 2026-03-26  
+**Completion**: 98% (JWT Auth + Rate Limiting + API Protection + Mobile UI)
 
 ### 🎯 Ключевые метрики
 
 - **63+ API Endpoints** (40+ защищённых JWT + 15+ публичных)
 - **11 полнофункциональных страниц** (9 dashboards + Auth + Profile)
-- **~6,850 строк кода** (TypeScript + 400 строк middleware)
+- **~7,400 строк кода** (TypeScript + 643 строк middleware)
 - **19 таблиц БД** (16 core + 3 auth)
-- **30 Git commits**
-- **24 TypeScript файла** (+ auth-middleware.ts)
-- **Bundle Size**: 187.5 KB (+ 24 KB middleware)
+- **37 Git commits** (7 commits за последнюю сессию)
+- **25 TypeScript файлов** (+ auth-middleware.ts + rate-limit.ts)
+- **Bundle Size**: 189.74 KB (оптимизирован)
 
 ### 🌟 Уникальные фичи
 
 ✅ **JWT Authentication** - полная система аутентификации (24h access + 7d refresh)  
-✅ **🔒 API Protection** - **НОВОЕ:** 40+ защищённых endpoints с JWT middleware  
+✅ **🔒 API Protection** - 40+ защищённых endpoints с JWT middleware  
+✅ **🛡️ Rate Limiting** - **НОВОЕ:** 3-tier защита от DDoS (60/300/1000 req/min)  
 ✅ **Mobile UI** - responsive design для всех устройств (mobile-first)  
 ✅ **Price Corridor API** - математическая модель коридора цены  
 ✅ **3 Market Factors** - институциональная поддержка, хайп, ликвидность  
@@ -147,6 +148,63 @@ curl -X POST http://localhost:3000/api/nodes \
   -H "Authorization: Bearer <access_token>" \
   -d '{"node_type":"artist","name":"New Artist","trust_level":0.8}'
 ```
+
+---
+
+## 🛡️ Rate Limiting (v2.7+) **НОВОЕ!**
+
+### 3-Tier Protection System
+
+Art Bank использует KV-based rate limiting для защиты от DDoS и злоупотреблений:
+
+| Tier | Requests/minute | Applies to |
+|------|-----------------|------------|
+| **Public** | 60 | Неаутентифицированные пользователи |
+| **Authenticated** | 300 | Пользователи с JWT токеном |
+| **Admin** | 1000 | Администраторы |
+| **Auth Strict** | 10 | Login/Register endpoints |
+
+### Features
+- ✅ **IP-based tracking** для публичных запросов
+- ✅ **User ID-based** для аутентифицированных
+- ✅ **Response Headers**: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+- ✅ **Graceful Degradation**: Работает без KV (для разработки)
+- ✅ **Cloudflare KV Storage**: Глобально распределённое хранилище счётчиков
+
+### Response Headers
+```http
+X-RateLimit-Limit: 60           # Максимум запросов в окне
+X-RateLimit-Remaining: 42       # Осталось запросов
+X-RateLimit-Reset: 1711483200   # Unix timestamp сброса
+```
+
+### Rate Limit Error (429)
+```json
+{
+  "error": "Too Many Requests",
+  "message": "Rate limit exceeded. Try again in 45 seconds.",
+  "code": "RATE_LIMIT_EXCEEDED",
+  "limit": 60,
+  "reset": "2024-03-26T21:00:00.000Z"
+}
+```
+
+### Configuration
+Requires Cloudflare KV namespace (см. `docs/RATE_LIMITING.md` для полной документации):
+```bash
+# Create KV namespace
+npx wrangler kv:namespace create RATE_LIMIT
+npx wrangler kv:namespace create RATE_LIMIT --preview
+
+# Update wrangler.jsonc with namespace IDs
+```
+
+### Cost Estimation
+- **Free tier**: 100,000 KV reads/day, 1,000 writes/day
+- **Typical usage** (10k req/day): $0/month
+- **At scale** (1M req/month): ~$5-6/month
+
+📖 **Full Documentation**: `docs/RATE_LIMITING.md`
 
 ---
 
