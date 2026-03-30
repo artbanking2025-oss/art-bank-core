@@ -25,6 +25,7 @@ import graphSegmentation from './routes/graph-segmentation';
 import auth from './routes/auth';
 import { authMiddleware, optionalAuthMiddleware } from './middleware/auth-middleware';
 import { rateLimitMiddleware, strictRateLimitMiddleware } from './middleware/rate-limit';
+import { healthCheckHandler, livenessHandler, readinessHandler } from './lib/health';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -37,6 +38,15 @@ app.use('/api/*', cors());
 
 // NOTE: Static files are served automatically by Cloudflare Pages from dist/
 // No need for serveStatic middleware - wrangler handles it
+
+// ========== HEALTH CHECK ENDPOINTS (PUBLIC) ==========
+// Detailed health check with diagnostics
+app.get('/health', healthCheckHandler);
+app.get('/api/health', healthCheckHandler);
+
+// Kubernetes-style probes
+app.get('/healthz', livenessHandler);
+app.get('/readyz', readinessHandler);
 
 // ========== AUTH ROUTES (PUBLIC) ==========
 // Apply strict rate limiting to auth endpoints (10 req/min)
