@@ -25,6 +25,7 @@ import graphSegmentation from './routes/graph-segmentation';
 import auth from './routes/auth';
 import { authMiddleware, optionalAuthMiddleware } from './middleware/auth-middleware';
 import { rateLimitMiddleware, strictRateLimitMiddleware } from './middleware/rate-limit';
+import { cacheGraph, cacheStats, cacheArtworks, cacheResource } from './middleware/cache';
 import { healthCheckHandler, livenessHandler, readinessHandler } from './lib/health';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -84,7 +85,7 @@ app.route('/api/graph-segmentation', graphSegmentation);
 // ===== PUBLIC ENDPOINTS (no auth required) =====
 
 // Graph Data API (for visualization on landing page)
-app.get('/api/graph-data', optionalAuthMiddleware, async (c) => {
+app.get('/api/graph-data', optionalAuthMiddleware, cacheGraph, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const graphData = await db.getGraphData();
   return c.json(graphData);
@@ -210,7 +211,7 @@ app.post('/api/edges', authMiddleware, async (c) => {
 });
 
 // Artworks API (public read, protected write)
-app.get('/api/artworks', optionalAuthMiddleware, async (c) => {
+app.get('/api/artworks', optionalAuthMiddleware, cacheArtworks, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const artistId = c.req.query('artist_id');
   const ownerId = c.req.query('owner_id');
@@ -227,7 +228,7 @@ app.get('/api/artworks', optionalAuthMiddleware, async (c) => {
   return c.json({ artworks });
 });
 
-app.get('/api/artworks/:id', optionalAuthMiddleware, async (c) => {
+app.get('/api/artworks/:id', optionalAuthMiddleware, cacheResource, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const artwork = await db.getArtwork(c.req.param('id'));
   
@@ -782,13 +783,13 @@ app.post('/api/admin/reset-circuit-breaker', authMiddleware, async (c) => {
 });
 
 // Dashboard & Analytics
-app.get('/api/dashboard/stats', async (c) => {
+app.get('/api/dashboard/stats', cacheStats, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const stats = await db.getDashboardStats();
   return c.json({ stats });
 });
 
-app.get('/api/dashboard/graph', async (c) => {
+app.get('/api/dashboard/graph', cacheGraph, async (c) => {
   const db = new ArtBankDB(c.env.DB);
   const graphData = await db.getGraphData();
   return c.json(graphData);
