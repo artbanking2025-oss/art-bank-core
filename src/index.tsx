@@ -27,10 +27,15 @@ import { authMiddleware, optionalAuthMiddleware } from './middleware/auth-middle
 import { rateLimitMiddleware, strictRateLimitMiddleware } from './middleware/rate-limit';
 import { cacheGraph, cacheStats, cacheArtworks, cacheResource } from './middleware/cache';
 import { healthCheckHandler, livenessHandler, readinessHandler } from './lib/health';
+import { swaggerUI } from '@hono/swagger-ui';
+import { loggingMiddleware, errorLoggingMiddleware } from './middleware/logger';
 
 const app = new Hono<{ Bindings: Env }>();
 
 // ========== GLOBAL MIDDLEWARE ==========
+// Structured Logging (applies to ALL routes - MUST BE FIRST)
+app.use('*', loggingMiddleware());
+
 // Rate Limiting (applies to all API routes)
 app.use('/api/*', rateLimitMiddleware);
 
@@ -48,6 +53,249 @@ app.get('/api/health', healthCheckHandler);
 // Kubernetes-style probes
 app.get('/healthz', livenessHandler);
 app.get('/readyz', readinessHandler);
+
+// ========== OPENAPI DOCUMENTATION (PUBLIC) ==========
+// Swagger UI - Interactive API documentation
+app.get('/api/docs', swaggerUI({ url: '/api/openapi.json' }));
+
+// OpenAPI specification JSON
+app.get('/api/openapi.json', (c) => {
+  const baseUrl = new URL(c.req.url).origin;
+  const openAPISpec = {
+    openapi: '3.1.0',
+    info: {
+      title: 'Art Bank Core API',
+      version: '2.7.0',
+      description: `
+# Art Bank Core API Documentation
+
+Production-ready API for Art Banking Platform with JWT authentication, graph-based network analysis, and comprehensive art ecosystem management.
+
+## Features
+- 🔒 JWT Authentication - Secure role-based access control
+- 📊 Graph Network - Node/Edge based relationship management  
+- 🎨 Art Management - Complete artwork lifecycle tracking
+- 💰 Transaction System - Price history and financial operations
+- ✅ Validation Hub - Expert authentication and condition reports
+- 📸 Media Hub - NLP-powered sentiment analysis
+- 🏛️ Exhibition Management - Gallery and museum event tracking
+- 🔄 Saga Pattern - Distributed transaction reliability
+- ⚡ Circuit Breaker - Resilience and fault tolerance
+
+## Authentication
+Most endpoints require JWT authentication. Include the token:
+\`\`\`
+Authorization: Bearer <your_jwt_token>
+\`\`\`
+
+## Rate Limiting
+- Public: 60 req/min
+- Authenticated: 300 req/min  
+- Admin: 1000 req/min
+- Auth endpoints: 10 req/min
+
+## Roles
+Artist, Collector, Gallery, Bank, Expert, Admin
+      `,
+      contact: {
+        name: 'Art Bank Core Team',
+        email: 'artbanking2025@gmail.com'
+      }
+    },
+    servers: [
+      { url: baseUrl, description: 'Current server' },
+      { url: 'https://art-bank.pages.dev', description: 'Production' },
+      { url: 'http://localhost:3000', description: 'Local development' }
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'JWT token from /api/auth/login'
+        }
+      }
+    },
+    tags: [
+      { name: 'Authentication', description: 'User registration, login, token refresh' },
+      { name: 'Nodes', description: 'Graph nodes management' },
+      { name: 'Edges', description: 'Graph edges management' },
+      { name: 'Artworks', description: 'Artwork management' },
+      { name: 'Transactions', description: 'Financial transactions' },
+      { name: 'Validations', description: 'Expert validations' },
+      { name: 'Media', description: 'Media items with NLP' },
+      { name: 'Exhibitions', description: 'Exhibition management' },
+      { name: 'Dashboard', description: 'Statistics and graphs' },
+      { name: 'Health', description: 'Health monitoring' }
+    ],
+    paths: {
+      '/api/auth/login': {
+        post: {
+          tags: ['Authentication'],
+          summary: 'User login',
+          description: 'Authenticate and receive JWT tokens',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['email', 'password'],
+                  properties: {
+                    email: { type: 'string', format: 'email', example: 'user@example.com' },
+                    password: { type: 'string', example: 'SecurePass123!' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: {
+              description: 'Login successful',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      accessToken: { type: 'string' },
+                      refreshToken: { type: 'string' },
+                      expiresIn: { type: 'number', example: 86400 }
+                    }
+                  }
+                }
+              }
+            },
+            401: { description: 'Invalid credentials' },
+            429: { description: 'Rate limit exceeded' }
+          }
+        }
+      },
+      '/api/auth/register': {
+        post: {
+          tags: ['Authentication'],
+          summary: 'Register new user',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['email', 'password', 'name', 'role'],
+                  properties: {
+                    email: { type: 'string', format: 'email' },
+                    password: { type: 'string', minLength: 8 },
+                    name: { type: 'string' },
+                    role: { 
+                      type: 'string', 
+                      enum: ['artist', 'collector', 'gallery', 'bank', 'expert'] 
+                    }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'User registered' },
+            400: { description: 'Invalid request' }
+          }
+        }
+      },
+      '/health': {
+        get: {
+          tags: ['Health'],
+          summary: 'Full health check',
+          responses: {
+            200: {
+              description: 'System healthy',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      status: { type: 'string', enum: ['healthy', 'degraded', 'unhealthy'] },
+                      timestamp: { type: 'string', format: 'date-time' },
+                      uptime: { type: 'number' },
+                      version: { type: 'string' },
+                      checks: { type: 'object' }
+                    }
+                  }
+                }
+              }
+            },
+            503: { description: 'System unhealthy' }
+          }
+        }
+      },
+      '/api/graph-data': {
+        get: {
+          tags: ['Dashboard'],
+          summary: 'Get graph visualization data',
+          description: 'Public endpoint with 5min cache',
+          responses: {
+            200: {
+              description: 'Graph data',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      nodes: { type: 'array' },
+                      edges: { type: 'array' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/nodes': {
+        get: {
+          tags: ['Nodes'],
+          summary: 'List nodes',
+          parameters: [
+            { name: 'limit', in: 'query', schema: { type: 'number' } },
+            { name: 'offset', in: 'query', schema: { type: 'number' } }
+          ],
+          responses: {
+            200: { description: 'List of nodes' }
+          }
+        },
+        post: {
+          tags: ['Nodes'],
+          summary: 'Create node',
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['node_type', 'name'],
+                  properties: {
+                    node_type: { 
+                      type: 'string',
+                      enum: ['artist', 'collector', 'gallery', 'bank', 'expert', 'artwork']
+                    },
+                    name: { type: 'string' },
+                    jurisdiction: { type: 'string' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            201: { description: 'Node created' },
+            401: { description: 'Authentication required' }
+          }
+        }
+      }
+    }
+  };
+  
+  return c.json(openAPISpec);
+});
 
 // ========== AUTH ROUTES (PUBLIC) ==========
 // Apply strict rate limiting to auth endpoints (10 req/min)
@@ -866,6 +1114,10 @@ app.get('/dashboard/:role', (c) => {
   const role = c.req.param('role');
   return c.html(renderDashboard(role));
 });
+
+// ========== ERROR HANDLING (MUST BE LAST) ==========
+// Error logging and structured error responses
+app.use('*', errorLoggingMiddleware());
 
 export default app;
 

@@ -31,7 +31,10 @@
     "test:prod": "curl https://art-bank.pages.dev/api/health/circuit-breakers"
   },
   "dependencies": {
-    "hono": "^4.12.7"
+    "@hono/swagger-ui": "^0.6.1",
+    "@hono/zod-openapi": "^1.2.4",
+    "hono": "^4.12.7",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@hono/vite-build": "^1.2.0",
