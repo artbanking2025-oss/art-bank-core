@@ -24,6 +24,7 @@ import dashboardRoutes from './routes/dashboard';
 
 // HTML renderers (TODO: move to separate module)
 import { renderAnalyticsDashboard } from './analytics-dashboard-render';
+import { renderAdminDashboard } from './lib/admin-dashboard';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -344,6 +345,11 @@ app.get('/profile', (c) => {
 // Analytics dashboard
 app.get('/analytics', (c) => {
   return c.html(renderAnalyticsDashboard());
+});
+
+// Admin dashboard (protected - TODO: add JWT auth)
+app.get('/admin', (c) => {
+  return c.html(renderAdminDashboard());
 });
 
 // Role-specific dashboards
