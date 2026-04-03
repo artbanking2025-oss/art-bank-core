@@ -7,6 +7,7 @@ import { swaggerUI } from '@hono/swagger-ui';
 import { authMiddleware } from './middleware/auth-middleware';
 import { rateLimitMiddleware, strictRateLimitMiddleware } from './middleware/rate-limit';
 import { loggingMiddleware, errorLoggingMiddleware } from './middleware/logger';
+import { versionMiddleware, versionEnforcementMiddleware } from './middleware/versioning';
 import { healthCheckHandler, livenessHandler, readinessHandler } from './lib/health';
 
 // Route modules
@@ -21,6 +22,8 @@ import mediaHub from './routes/media-hub';
 import graphSegmentation from './routes/graph-segmentation';
 import coreRoutes from './routes/core';
 import dashboardRoutes from './routes/dashboard';
+import v1Routes from './routes/v1';
+import v2Routes from './routes/v2';
 
 // HTML renderers (TODO: move to separate module)
 import { renderAnalyticsDashboard } from './analytics-dashboard-render';
@@ -31,6 +34,10 @@ const app = new Hono<{ Bindings: Env }>();
 // ========== GLOBAL MIDDLEWARE ==========
 // Structured Logging (MUST BE FIRST - captures all requests)
 app.use('*', loggingMiddleware());
+
+// API Versioning (extract and validate version)
+app.use('/api/*', versionMiddleware());
+app.use('/api/*', versionEnforcementMiddleware());
 
 // Rate Limiting (applies to all API routes)
 app.use('/api/*', rateLimitMiddleware);
@@ -316,7 +323,14 @@ app.route('/api/media-hub', mediaHub);
 app.use('/api/graph-segmentation/*', authMiddleware);
 app.route('/api/graph-segmentation', graphSegmentation);
 
-// ========== CORE API ROUTES ==========
+// ========== VERSIONED API ROUTES ==========
+// V1 API (deprecated, sunset 2026-12-31)
+app.route('/api/v1', v1Routes);
+
+// V2 API (current, stable)
+app.route('/api/v2', v2Routes);
+
+// ========== CORE API ROUTES (unversioned, defaults to v2) ==========
 // Core endpoints (nodes, edges, artworks, transactions, etc.)
 app.route('/api', coreRoutes);
 
