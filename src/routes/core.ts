@@ -24,6 +24,7 @@ import {
 import { circuitBreakers, CircuitBreakerOpenError } from '../lib/circuit-breaker';
 import { createPurchaseSaga } from '../lib/saga';
 import { authMiddleware } from '../middleware/auth-middleware';
+import { adminMiddleware } from '../middleware/admin-middleware';
 import { cacheArtworks } from '../middleware/cache';
 import { getLogger } from '../middleware/logger';
 
@@ -415,7 +416,7 @@ coreRoutes.get('/saga-logs', async (c) => {
 
 // ===== ADMIN OPERATIONS =====
 
-coreRoutes.post('/admin/emergency-stop', authMiddleware, async (c) => {
+coreRoutes.post('/admin/emergency-stop', authMiddleware, adminMiddleware, async (c) => {
   const logger = getLogger(c);
   
   try {
@@ -430,7 +431,7 @@ coreRoutes.post('/admin/emergency-stop', authMiddleware, async (c) => {
   }
 });
 
-coreRoutes.post('/admin/reset-circuit-breaker/:name', authMiddleware, async (c) => {
+coreRoutes.post('/admin/reset-circuit-breaker/:name', authMiddleware, adminMiddleware, async (c) => {
   const logger = getLogger(c);
   const name = c.req.param('name');
   

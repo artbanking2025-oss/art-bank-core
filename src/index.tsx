@@ -5,8 +5,10 @@ import { swaggerUI } from '@hono/swagger-ui';
 
 // Middleware
 import { authMiddleware } from './middleware/auth-middleware';
+import { adminMiddleware } from './middleware/admin-middleware';
 import { rateLimitMiddleware, strictRateLimitMiddleware } from './middleware/rate-limit';
 import { loggingMiddleware, errorLoggingMiddleware } from './middleware/logger';
+import { metricsMiddleware } from './middleware/metrics-middleware';
 import { versionMiddleware, versionEnforcementMiddleware } from './middleware/versioning';
 import { healthCheckHandler, livenessHandler, readinessHandler } from './lib/health';
 
@@ -24,16 +26,21 @@ import coreRoutes from './routes/core';
 import dashboardRoutes from './routes/dashboard';
 import v1Routes from './routes/v1';
 import v2Routes from './routes/v2';
+import metricsRoutes from './routes/metrics';
 
 // HTML renderers (TODO: move to separate module)
 import { renderAnalyticsDashboard } from './analytics-dashboard-render';
 import { renderAdminDashboard } from './lib/admin-dashboard';
+import { renderMetricsDashboard } from './lib/metrics-dashboard';
 
 const app = new Hono<{ Bindings: Env }>();
 
 // ========== GLOBAL MIDDLEWARE ==========
 // Structured Logging (MUST BE FIRST - captures all requests)
 app.use('*', loggingMiddleware());
+
+// Metrics Collection (captures performance data)
+app.use('*', metricsMiddleware);
 
 // API Versioning (extract and validate version)
 app.use('/api/*', versionMiddleware());
@@ -330,6 +337,10 @@ app.route('/api/v1', v1Routes);
 // V2 API (current, stable)
 app.route('/api/v2', v2Routes);
 
+// ========== METRICS ROUTES (ADMIN ONLY) ==========
+app.use('/api/metrics/*', authMiddleware, adminMiddleware);
+app.route('/api/metrics', metricsRoutes);
+
 // ========== CORE API ROUTES (unversioned, defaults to v2) ==========
 // Core endpoints (nodes, edges, artworks, transactions, etc.)
 app.route('/api', coreRoutes);
@@ -361,9 +372,14 @@ app.get('/analytics', (c) => {
   return c.html(renderAnalyticsDashboard());
 });
 
-// Admin dashboard (protected - TODO: add JWT auth)
-app.get('/admin', (c) => {
+// Admin dashboard (protected with JWT + admin role)
+app.get('/admin', authMiddleware, adminMiddleware, (c) => {
   return c.html(renderAdminDashboard());
+});
+
+// Metrics dashboard (protected with JWT + admin role)
+app.get('/metrics', authMiddleware, adminMiddleware, (c) => {
+  return c.html(renderMetricsDashboard());
 });
 
 // Role-specific dashboards
