@@ -12,6 +12,7 @@
 
 import { Context, Next } from 'hono';
 import type { Env } from '../types';
+import { logExporter } from '../lib/log-exporter';
 
 /**
  * Log levels
@@ -85,6 +86,25 @@ export class Logger {
    */
   private output(entry: LogEntry) {
     const formatted = this.formatLog(entry);
+    
+    // Store log in exporter for later export
+    logExporter.addLog({
+      timestamp: entry.timestamp,
+      level: entry.level as string,
+      message: entry.message,
+      correlationId: entry.correlationId,
+      requestId: entry.requestId,
+      method: entry.method,
+      path: entry.path,
+      status: entry.statusCode,
+      duration: entry.duration,
+      error: entry.error?.message,
+      stack: entry.error?.stack,
+      userId: entry.userId,
+      userRole: entry.userRole,
+      ip: entry.ip,
+      userAgent: entry.userAgent
+    });
     
     switch (entry.level) {
       case LogLevel.DEBUG:

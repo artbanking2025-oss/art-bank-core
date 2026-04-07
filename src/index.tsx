@@ -27,6 +27,7 @@ import dashboardRoutes from './routes/dashboard';
 import v1Routes from './routes/v1';
 import v2Routes from './routes/v2';
 import metricsRoutes from './routes/metrics';
+import logsRoutes from './routes/logs';
 
 // HTML renderers (TODO: move to separate module)
 import { renderAnalyticsDashboard } from './analytics-dashboard-render';
@@ -340,6 +341,10 @@ app.route('/api/v2', v2Routes);
 // ========== METRICS ROUTES (ADMIN ONLY) ==========
 app.use('/api/metrics/*', authMiddleware, adminMiddleware);
 app.route('/api/metrics', metricsRoutes);
+
+// ========== LOGS ROUTES (ADMIN ONLY) ==========
+app.use('/api/logs/*', authMiddleware, adminMiddleware);
+app.route('/api/logs', logsRoutes);
 
 // ========== CORE API ROUTES (unversioned, defaults to v2) ==========
 // Core endpoints (nodes, edges, artworks, transactions, etc.)
