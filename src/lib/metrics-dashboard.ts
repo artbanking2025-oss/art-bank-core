@@ -66,6 +66,9 @@ export function renderMetricsDashboard(): string {
                         </h1>
                     </div>
                     <div class="flex items-center space-x-4">
+                        <span id="wsStatus" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            <i class="fas fa-circle mr-1"></i>Connecting...
+                        </span>
                         <div class="text-sm text-gray-500">
                             Last updated: <span id="lastUpdate" class="font-medium">-</span>
                         </div>
@@ -510,6 +513,108 @@ export function renderMetricsDashboard(): string {
             return statusTexts[code] || 'Unknown';
         }
 
+        // WebSocket Connection for Real-Time Updates
+        let ws = null;
+        let wsReconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        
+        function connectWebSocket() {
+            try {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = \`\${protocol}//\${window.location.host}/api/ws\`;
+                
+                ws = new WebSocket(wsUrl);
+                
+                ws.onopen = () => {
+                    console.log('WebSocket connected - Real-time updates enabled');
+                    wsReconnectAttempts = 0;
+                    
+                    // Subscribe to metrics channel
+                    ws.send(JSON.stringify({
+                        type: 'subscribe',
+                        payload: { channel: 'metrics' },
+                        timestamp: new Date().toISOString()
+                    }));
+                    
+                    // Update status indicator
+                    const statusEl = document.getElementById('wsStatus');
+                    if (statusEl) {
+                        statusEl.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
+                        statusEl.innerHTML = '<i class="fas fa-circle mr-1"></i>Live';
+                    }
+                };
+                
+                ws.onmessage = (event) => {
+                    try {
+                        const message = JSON.parse(event.data);
+                        
+                        if (message.type === 'metrics' && message.payload) {
+                            // Update dashboard with real-time metrics
+                            updateDashboard(message.payload);
+                        } else if (message.type === 'ping') {
+                            // Respond to ping with pong
+                            ws.send(JSON.stringify({
+                                type: 'pong',
+                                timestamp: new Date().toISOString()
+                            }));
+                        }
+                    } catch (error) {
+                        console.error('Error processing WebSocket message:', error);
+                    }
+                };
+                
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                };
+                
+                ws.onclose = () => {
+                    console.log('WebSocket disconnected');
+                    
+                    // Update status indicator
+                    const statusEl = document.getElementById('wsStatus');
+                    if (statusEl) {
+                        statusEl.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800';
+                        statusEl.innerHTML = '<i class="fas fa-circle mr-1"></i>Reconnecting...';
+                    }
+                    
+                    // Try to reconnect
+                    if (wsReconnectAttempts < maxReconnectAttempts) {
+                        wsReconnectAttempts++;
+                        setTimeout(connectWebSocket, 3000 * wsReconnectAttempts);
+                    } else {
+                        // Fall back to HTTP polling
+                        console.log('WebSocket reconnection failed - falling back to HTTP polling');
+                        if (statusEl) {
+                            statusEl.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800';
+                            statusEl.innerHTML = '<i class="fas fa-circle mr-1"></i>Polling';
+                        }
+                        setInterval(loadMetrics, 5000);
+                    }
+                };
+            } catch (error) {
+                console.error('Failed to connect WebSocket:', error);
+                // Fall back to HTTP polling
+                setInterval(loadMetrics, 5000);
+            }
+        }
+        
+        function updateDashboard(systemMetrics) {
+            // Update metrics cards
+            document.getElementById('totalRequests').textContent = systemMetrics.requests.total.toLocaleString();
+            document.getElementById('avgResponseTime').textContent = Math.round(systemMetrics.performance.responseTime.avg) + ' ms';
+            document.getElementById('errorRate').textContent = systemMetrics.errors.rate.toFixed(2) + '%';
+            document.getElementById('cacheHitRate').textContent = systemMetrics.cache.hitRate.toFixed(1) + '%';
+            
+            // Update charts with new data
+            updateStatusChart(systemMetrics.requests.byStatus);
+            updateMethodChart(systemMetrics.requests.byMethod);
+            updatePercentilesTable(systemMetrics.performance.responseTime, systemMetrics.performance.dbQueryTime);
+            updateEndpointsTable(systemMetrics.requests.byEndpoint, systemMetrics.requests.total);
+            
+            // Update last update time
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        }
+
         function refreshMetrics() {
             loadMetrics();
         }
@@ -519,8 +624,8 @@ export function renderMetricsDashboard(): string {
             initCharts();
             loadMetrics();
             
-            // Auto-refresh every 5 seconds
-            setInterval(loadMetrics, 5000);
+            // Try WebSocket first, fall back to HTTP polling if it fails
+            connectWebSocket();
         });
     </script>
 </body>

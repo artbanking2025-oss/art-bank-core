@@ -28,6 +28,7 @@ import v1Routes from './routes/v1';
 import v2Routes from './routes/v2';
 import metricsRoutes from './routes/metrics';
 import logsRoutes from './routes/logs';
+import websocketRoutes from './routes/websocket';
 
 // HTML renderers (TODO: move to separate module)
 import { renderAnalyticsDashboard } from './analytics-dashboard-render';
@@ -345,6 +346,10 @@ app.route('/api/metrics', metricsRoutes);
 // ========== LOGS ROUTES (ADMIN ONLY) ==========
 app.use('/api/logs/*', authMiddleware, adminMiddleware);
 app.route('/api/logs', logsRoutes);
+
+// ========== WEBSOCKET ROUTES ==========
+// Real-time updates via WebSocket (no auth middleware - handled in route)
+app.route('/api', websocketRoutes);
 
 // ========== CORE API ROUTES (unversioned, defaults to v2) ==========
 // Core endpoints (nodes, edges, artworks, transactions, etc.)
