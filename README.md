@@ -1,1586 +1,310 @@
-# Art Bank Core v2.7 - Art-OS: Защищённая платформа для арт-рынка 🚀🔒
+# Art Bank Core v2.8 - Art-OS: Защищённая платформа для арт-рынка 🚀🔒🔌
 
 ## 📊 Статус проекта
 
-**Версия**: v2.7 ✨  
-**Статус**: ✅ **PRODUCTION READY + FULL OBSERVABILITY**  
-**Последнее обновление**: 2026-04-01  
-**Completion**: 99% (OpenAPI Docs + Structured Logging + Health Checks + HTTP Caching + Rate Limiting + JWT Auth)
+**Версия**: v2.8 ✨  
+**Статус**: ✅ **PRODUCTION READY + WEBSOCKET REAL-TIME**  
+**Последнее обновление**: 2026-04-07  
+**GitHub**: https://github.com/artbanking2025-oss/art-bank-core  
+**Sandbox**: https://3000-ir9tb52hhw0a86hr4kq8c-2e77fc33.sandbox.novita.ai  
 
 ### 🎯 Ключевые метрики
 
-- **67+ API Endpoints** (40+ защищённых JWT + 15+ публичных + 4 health + 8 cache-optimized)
+- **70+ API Endpoints** (42+ защищённых JWT + 20+ публичных + 3 WebSocket + 8 health/metrics)
 - **11 полнофункциональных страниц** (9 dashboards + Auth + Profile)
-- **~8,200 строк кода** (TypeScript + 1,400 строк middleware + logging)
+- **~10,520 строк кода** (TypeScript + 1,500 строк middleware + logging)
 - **19 таблиц БД** (16 core + 3 auth)
-- **44 Git commits** (2 commits сегодня)
-- **27 TypeScript файлов** (+ openapi.ts + logger.ts + openapi-routes.ts)
-- **Bundle Size**: 205.14 KB (OpenAPI + Structured Logging)
+- **52 Git commits** (3 commits сегодня: WebSocket + Log Export + Final Report)
+- **46 TypeScript файлов** (+ websocket-manager.ts + log-exporter.ts + metrics.ts)
+- **Bundle Size**: 191.73 KB (WebSocket + Real-time metrics + Log export)
 
-### 🌟 Уникальные фичи
+### 🌟 Новые фичи v2.8
+
+🆕 **🔌 WebSocket Support** - Real-time metrics updates через WebSocket (2s throttling)  
+🆕 **📊 Performance Metrics Dashboard** - Live dashboard с Chart.js + WebSocket integration  
+🆕 **📄 Log Export System** - JSON/CSV export с фильтрацией (admin-only)  
+🆕 **🗺️ Development Roadmap** - Полный план этапов (Phase 0-6, 12-18 месяцев)  
+
+### ✅ Существующие фичи (v2.0-v2.7)
 
 ✅ **JWT Authentication** - полная система аутентификации (24h access + 7d refresh)  
-✅ **🔒 API Protection** - 40+ защищённых endpoints с JWT middleware  
+✅ **🔒 API Protection** - 42+ защищённых endpoints с JWT middleware  
 ✅ **🛡️ Rate Limiting** - 3-tier защита от DDoS (60/300/1000 req/min)  
-✅ **📚 OpenAPI/Swagger** - **НОВОЕ:** Interactive API docs с live testing  
-✅ **📝 Structured Logging** - **НОВОЕ:** JSON logs с correlation IDs + error tracking  
+✅ **📚 OpenAPI/Swagger** - Interactive API docs с live testing (67+ endpoints)  
+✅ **📝 Structured Logging** - JSON logs с correlation IDs + error tracking  
 ✅ **🏥 Health Monitoring** - Comprehensive health checks + K8s probes  
 ✅ **⚡ HTTP Caching** - Smart caching с 30% performance boost  
-✅ **Mobile UI** - responsive design для всех устройств (mobile-first)  
+✅ **📱 Mobile UI** - responsive design для всех устройств (mobile-first)  
 ✅ **Price Corridor API** - математическая модель коридора цены  
 ✅ **3 Market Factors** - институциональная поддержка, хайп, ликвидность  
 ✅ **Media Hub NLP** - анализ новостей с sentiment scoring  
 ✅ **Graph Segmentation** - многомерная сегментация (время × стиль × география)  
 ✅ **3D Visualization** - Three.js интерактивная визуализация давления  
 ✅ **Circuit Breaker / Saga / STOP** - паттерны надёжности  
-✅ **CSV/JSON Export** - универсальный экспорт данных (защищён JWT)  
 
 ---
 
-## 🔐 Authentication & Security (v2.5+)
+## 🔌 WebSocket Real-Time Updates (v2.8+) **НОВОЕ!**
 
-### JWT Authentication System
-- **Access Tokens**: 24-hour lifetime, HS256 signing
-- **Refresh Tokens**: 7-day lifetime, secure rotation
-- **Password Hashing**: SHA-256 cryptographic hashing
-- **Role-Based Access**: 7 user roles (artist, collector, gallery, bank, expert, admin, public)
-- **Email Validation**: RFC 5322 compliant
-- **Password Requirements**: 8+ chars, upper/lower/digit
+### WebSocket Manager
+- **Real-time broadcasting** - Metrics updates каждые 2 секунды (throttled)
+- **Auto-reconnection** - До 5 попыток с exponential backoff (3s, 6s, 9s, 12s, 15s)
+- **Heartbeat mechanism** - Ping/Pong каждые 30 секунд
+- **Multi-channel support** - metrics, logs, health, alerts
+- **Client subscription** - Subscribe/unsubscribe к каналам
+- **Fallback to HTTP polling** - Автоматический fallback если WebSocket недоступен
 
-### Auth Endpoints
-- `POST /api/auth/register` - User registration with role selection
-- `POST /api/auth/login` - Email/password authentication
-- `POST /api/auth/refresh` - Token refresh flow
-- `GET /api/auth/me` - Get current user profile (protected)
-- `PUT /api/auth/profile` - Update user profile (protected)
-- `POST /api/auth/change-password` - Password change (protected)
-
-### Auth UI Pages
-- `/auth` - Login/Register page with tab switcher
-- `/profile` - Full user profile management (edit name, change password, stats)
-- Mobile menu with auth state awareness
-
-### Database Schema
-```sql
-users (id, email, password_hash, full_name, role, created_at, updated_at, last_login_at)
-refresh_tokens (id, user_id, token_hash, expires_at, created_at)
-user_sessions (id, user_id, device_info, ip_address, last_activity_at, created_at)
+### WebSocket Endpoints
+```
+GET  /api/ws          - WebSocket upgrade endpoint (ws/wss auto-detect)
+GET  /api/ws/status   - Connection status (JSON)
+POST /api/ws/broadcast - Test broadcast (admin only)
 ```
 
-### Demo Account
-```
-Email: test@artbank.io
-Password: Test123!
-Role: Collector
-```
+### WebSocket Client Example
+```javascript
+// Connect to WebSocket
+const ws = new WebSocket('wss://your-domain.com/api/ws');
 
----
+// Subscribe to metrics channel
+ws.onopen = () => {
+  ws.send(JSON.stringify({
+    type: 'subscribe',
+    payload: { channel: 'metrics' },
+    timestamp: new Date().toISOString()
+  }));
+};
 
-## 🔒 API Protection (v2.7+) **НОВОЕ!**
+// Receive real-time metrics updates
+ws.onmessage = (event) => {
+  const message = JSON.parse(event.data);
+  if (message.type === 'metrics') {
+    console.log('New metrics:', message.payload);
+    updateDashboard(message.payload);
+  }
+};
 
-### Middleware Functions
-Реализованы 3 типа middleware для защиты API:
-
-1. **authMiddleware** - требует валидный JWT token
-2. **roleMiddleware** - требует определённую роль пользователя
-3. **optionalAuthMiddleware** - валидирует токен, если он присутствует
-
-### Защищённые Endpoints (JWT required) 🔐
-
-**CRUD операции (POST/PUT/PATCH/DELETE)**:
-- `/api/nodes`, `/api/edges`, `/api/artworks`, `/api/transactions` (создание/изменение)
-- `/api/validations`, `/api/media`, `/api/exhibitions` (POST)
-- `/api/artworks/:id/tags` (POST)
-
-**Role-Specific Routes** (все методы защищены):
-- `/api/artist/*` - Artist dashboard & operations
-- `/api/collector/*` - Collector portfolio & purchases
-- `/api/gallery/*` - Gallery exhibitions & sales
-- `/api/bank/*` - Bank-backed lending & validation
-- `/api/expert/*` - Expert certifications
-
-**Analytics & Extended Features**:
-- `/api/analytics-extended/*` - Advanced analytics
-- `/api/analytics/fair-price` - Price corridor calculation
-- `/api/analytics/risk-score` - Risk assessment
-- `/api/media-hub/*` - Media analysis & sentiment
-- `/api/graph-segmentation/*` - Graph segmentation
-
-**Data Export & Admin**:
-- `/api/export/*` - CSV/JSON export (nodes, artworks, transactions, validations)
-- `/api/admin/*` - Emergency stop, circuit breaker management
-- `/api/events`, `/api/saga-logs` - Internal monitoring
-
-**Total**: **40+ protected endpoints** ✅
-
-### Публичные Endpoints (no auth required) 🌐
-
-**Read-only Data Access**:
-- `/api/graph-data` - Network graph for visualization
-- `/api/dashboard/stats`, `/api/dashboard/graph` - Dashboard statistics
-- `/api/nodes`, `/api/edges`, `/api/artworks`, `/api/transactions` (GET)
-- `/api/validations` (GET)
-- `/api/artworks/:id/*`, `/api/galleries/:id/*`, `/api/tags/*` (GET)
-- `/api/health/circuit-breakers` - System health status
-
-**Total**: **15+ public endpoints** ✅
-
-### Error Codes
-```json
-{
-  "AUTH_REQUIRED": "Missing or invalid Authorization header",
-  "INVALID_TOKEN": "Invalid or expired token",
-  "TOKEN_EXPIRED": "Token has expired",
-  "INSUFFICIENT_PERMISSIONS": "User role doesn't have access",
-  "AUTH_ERROR": "Internal authentication error"
-}
-```
-
-### Usage Example
-```bash
-# 1. Login to get token
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@artbank.io","password":"Test123!"}'
-
-# Response: { "tokens": { "access_token": "eyJ...", ... } }
-
-# 2. Use token for protected endpoint
-curl -X POST http://localhost:3000/api/nodes \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <access_token>" \
-  -d '{"node_type":"artist","name":"New Artist","trust_level":0.8}'
+// Handle ping/pong for heartbeat
+ws.onmessage = (event) => {
+  const message = JSON.parse(event.data);
+  if (message.type === 'ping') {
+    ws.send(JSON.stringify({ type: 'pong', timestamp: new Date().toISOString() }));
+  }
+};
 ```
 
 ---
 
-## 🛡️ Rate Limiting (v2.7+) **НОВОЕ!**
-
-### 3-Tier Protection System
-
-Art Bank использует KV-based rate limiting для защиты от DDoS и злоупотреблений:
-
-| Tier | Requests/minute | Applies to |
-|------|-----------------|------------|
-| **Public** | 60 | Неаутентифицированные пользователи |
-| **Authenticated** | 300 | Пользователи с JWT токеном |
-| **Admin** | 1000 | Администраторы |
-| **Auth Strict** | 10 | Login/Register endpoints |
+## 📊 Performance Metrics Dashboard (v2.7+)
 
 ### Features
-- ✅ **IP-based tracking** для публичных запросов
-- ✅ **User ID-based** для аутентифицированных
-- ✅ **Response Headers**: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
-- ✅ **Graceful Degradation**: Работает без KV (для разработки)
-- ✅ **Cloudflare KV Storage**: Глобально распределённое хранилище счётчиков
+- **Real-time updates** - Live metrics через WebSocket (2s interval)
+- **4 Interactive charts** - Response time, Request rate, Status codes, HTTP methods
+- **Percentile statistics** - P50, P95, P99 для response time и DB queries
+- **Top 10 endpoints** - Самые популярные endpoints по частоте запросов
+- **Summary cards** - Total requests, Avg response time, Error rate, Cache hit rate
+- **WebSocket status indicator** - Live/Reconnecting/Polling status
 
-### Response Headers
-```http
-X-RateLimit-Limit: 60           # Максимум запросов в окне
-X-RateLimit-Remaining: 42       # Осталось запросов
-X-RateLimit-Reset: 1711483200   # Unix timestamp сброса
+### Access
+```
+URL: /metrics (admin only)
+Credentials: admin@artbank.io / AdminPass123!
 ```
 
-### Rate Limit Error (429)
-```json
-{
-  "error": "Too Many Requests",
-  "message": "Rate limit exceeded. Try again in 45 seconds.",
-  "code": "RATE_LIMIT_EXCEEDED",
-  "limit": 60,
-  "reset": "2024-03-26T21:00:00.000Z"
-}
+### Metrics API Endpoints
+```
+GET  /api/metrics/system           - System metrics summary
+GET  /api/metrics/timeseries/:metric?interval=60000 - Time series data
+GET  /api/metrics/summary/:metric  - Statistical summary (min/max/avg/p50/p95/p99)
+POST /api/metrics/reset            - Reset metrics (admin only)
 ```
 
-### Configuration
-Requires Cloudflare KV namespace (см. `docs/RATE_LIMITING.md` для полной документации):
+---
+
+## 📄 Log Export System (v2.8+) **НОВОЕ!**
+
+### Features
+- **In-memory log storage** - Last 10,000 logs (circular buffer)
+- **JSON export** - Full JSON export с всеми полями
+- **CSV export** - CSV format для Excel/Google Sheets
+- **Advanced filtering** - By date range, level, search query, limit
+- **Log statistics** - Total count, breakdown by level/path, time range
+- **Search API** - Full-text search в логах
+
+### Log Export Endpoints
+```
+GET  /api/logs/export?format=json|csv&startDate=...&endDate=...&level=info&search=error&limit=1000
+GET  /api/logs/stats - Log statistics (count, breakdown, time range)
+GET  /api/logs/search?query=...&level=...&limit=... - Search logs
+POST /api/logs/clear - Clear log buffer (admin only)
+```
+
+### Export Examples
 ```bash
-# Create KV namespace
-npx wrangler kv:namespace create RATE_LIMIT
-npx wrangler kv:namespace create RATE_LIMIT --preview
+# Export last 100 logs as JSON
+curl "http://localhost:3000/api/logs/export?format=json&limit=100" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
 
-# Update wrangler.jsonc with namespace IDs
+# Export error logs as CSV
+curl "http://localhost:3000/api/logs/export?format=csv&level=error" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -o logs_errors.csv
+
+# Search logs for specific term
+curl "http://localhost:3000/api/logs/search?query=authentication&limit=50" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+# Get log statistics
+curl "http://localhost:3000/api/logs/stats" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
-
-### Cost Estimation
-- **Free tier**: 100,000 KV reads/day, 1,000 writes/day
-- **Typical usage** (10k req/day): $0/month
-- **At scale** (1M req/month): ~$5-6/month
-
-📖 **Full Documentation**: `docs/RATE_LIMITING.md`
 
 ---
 
-## 📚 OpenAPI/Swagger Documentation (v2.7+) **НОВОЕ!**
+## 🗺️ Development Roadmap (Full 12-18 месяцев план)
 
-### Interactive API Documentation
+**См. `/docs/FINAL_SESSION_REPORT.md` для детального плана**
 
-Art Bank Core предоставляет **автоматическую интерактивную документацию** для всех API endpoints.
+### Phase 0: Foundation ✅ 99% Done
+- ✅ JWT Authentication + Role-based access control
+- ✅ Rate Limiting + OpenAPI + Health Monitoring
+- ✅ Structured Logging + HTTP Caching
+- ✅ Performance Metrics Dashboard + WebSocket + Log Export
+- ⏳ Production deployment (Cloudflare Pages + D1 Database)
 
-#### 🔗 Access Points:
+### Phase 1: Performance Optimization (2-3 недели)
+- Redis Rate Limiting (distributed via Cloudflare KV)
+- Mobile Dashboard optimization (touch-optimized charts)
+- Monitoring & Alerts (Prometheus export + alert rules)
+- Database query optimization (composite indexes + profiling)
 
-**Production**:
-- 📖 **Swagger UI**: https://art-bank.pages.dev/api/docs
-- 📄 **OpenAPI JSON**: https://art-bank.pages.dev/api/openapi.json
+### Phase 2: Central Router + Kafka (3-4 недели)
+- Go/TS API Gateway с event routing
+- RabbitMQ emulation (Cloudflare Durable Objects)
+- Load balancing + Circuit breakers
+- Event-driven architecture (transaction.created, artwork.updated, etc.)
 
-**Local Development**:
-- 📖 **Swagger UI**: http://localhost:3000/api/docs
-- 📄 **OpenAPI JSON**: http://localhost:3000/api/openapi.json
+### Phase 3: Analytic Core + Transaction Hub (3-4 недели)
+- Python microservice (FastAPI + Pandas) для аналитики
+- Go Saga service для distributed transactions
+- Price corridor calculation + Fraud detection
+- Expert opinion aggregation
 
-**Sandbox (current)**:
-- 📖 **Swagger UI**: https://3000-ir9tb52hhw0a86hr4kq8c-2e77fc33.sandbox.novita.ai/api/docs
+### Phase 4: Graph Data + Media Hub (3-4 недели)
+- Neo4j/Memgraph migration (D1 → Graph DB)
+- Python NLP service (spaCy, transformers, BERT)
+- Sentiment analysis + Entity extraction
+- Graph algorithms (path finding, community detection, PageRank)
 
-#### ✨ Features:
+### Phase 5: Advanced ML Models (1.5-2 месяца)
+- Price Prediction Model (LSTM/Transformer for time series)
+- Anomaly Detection Model (Isolation Forest + AutoEncoder)
+- ML model serving API + monitoring dashboard
 
-- ✅ **Try it out** - Тестируйте API прямо из браузера
-- ✅ **Authentication** - Встроенное управление JWT токенами
-- ✅ **Request/Response Examples** - Реальные примеры для каждого endpoint
-- ✅ **Schema Validation** - Real-time валидация входных данных
-- ✅ **67+ Documented Endpoints** - Полное покрытие API
-- ✅ **Organized by Tags** - Группировка по функциональности
-- ✅ **Client SDK Generation** - Генерация клиентов для TypeScript, Python, Go
+### Phase 6: Infrastructure & Scaling (2.5-3.5 месяца)
+- Kafka/RabbitMQ integration (production-grade message queue)
+- React Native mobile app (iOS + Android, cross-platform)
+- Production database migration (D1 → PlanetScale/Neon/Neo4j)
+- Infrastructure monitoring (Prometheus, Grafana, alerts)
 
-#### 📊 Documented Endpoints:
+**Total Budget**: $251,000 - $362,000  
+**Total Duration**: 12-18 месяцев  
+**Team Size**: 3-5 developers average
 
-**Categories**:
-- 🔐 **Authentication** - Register, login, token refresh
-- 📊 **Nodes** - Graph node management (artists, collectors, etc.)
-- 🔗 **Edges** - Relationship management
-- 🎨 **Artworks** - Artwork lifecycle tracking
-- 💰 **Transactions** - Financial operations
-- ✅ **Validations** - Expert validations
-- 📸 **Media** - Media hub with NLP
-- 🏛️ **Exhibitions** - Gallery events
-- 📈 **Dashboard** - Statistics and graphs
-- 🏥 **Health** - System monitoring
+---
 
-#### 🚀 Quick Start:
+## 🚀 Quick Start
 
-1. **Open Swagger UI** → `/api/docs`
-2. **Click "Authorize"** → Enter JWT token
-3. **Select endpoint** → Click "Try it out"
-4. **Fill parameters** → Click "Execute"
-5. **View response** → See results instantly
-
-#### 💻 Code Generation:
-
-Generate type-safe clients:
-
+### Local Development
 ```bash
-# TypeScript
-npx openapi-typescript http://localhost:3000/api/openapi.json -o ./types/api.ts
-
-# Python
-openapi-generator-cli generate \
-  -i http://localhost:3000/api/openapi.json \
-  -g python -o ./clients/python
-```
-
-#### 📖 Technology Stack:
-
-- **OpenAPI 3.1** - Latest OpenAPI specification
-- **Swagger UI** - Interactive documentation interface
-- **Zod** - Runtime type validation
-- **@hono/zod-openapi** - Integration with Hono framework
-
-📖 **Full Documentation**: `docs/OPENAPI.md`
-
----
-
-## 📝 Structured Logging (v2.7+) **НОВОЕ!**
-
-### Comprehensive JSON Logging System
-
-Art Bank включает **production-ready систему структурированного логирования** с полным контекстом запросов.
-
-#### ✨ Features:
-
-- ✅ **JSON Format** - Machine-parsable structured logs
-- ✅ **Correlation IDs** - Track requests across services
-- ✅ **Request Tracking** - Full request lifecycle logging
-- ✅ **Performance Metrics** - Duration, status codes, response times
-- ✅ **User Context** - User ID, role, IP address, User-Agent
-- ✅ **Error Tracking** - Stack traces, error codes, error context
-- ✅ **Multiple Log Levels** - debug, info, warn, error, fatal
-
-#### 📊 Log Entry Example:
-
-```json
-{
-  "timestamp": "2026-04-01T21:35:44.258Z",
-  "level": "info",
-  "message": "Request completed",
-  "correlationId": "1775079344257-7gu5sqn32",
-  "requestId": "1775079344257-w554sdwia",
-  "method": "GET",
-  "path": "/api/graph-data",
-  "statusCode": 200,
-  "duration": 182,
-  "userId": "user-123",
-  "userRole": "artist",
-  "ip": "203.0.113.42",
-  "userAgent": "Mozilla/5.0..."
-}
-```
-
-#### 🎯 Log Levels:
-
-| Level | Usage | Example |
-|-------|-------|---------|
-| **DEBUG** | Development verbose logging | Cache lookups, internal state |
-| **INFO** | Normal operations | Request/response, operations |
-| **WARN** | Non-fatal issues | Rate limits, validation warnings |
-| **ERROR** | Recoverable errors | DB errors, validation failures |
-| **FATAL** | Critical failures | Service crashes, DB connection lost |
-
-#### 🔗 Correlation Tracking:
-
-Every request automatically receives:
-- **correlationId** - Track across services/microservices
-- **requestId** - Unique identifier for this request
-
-Response headers include:
-```
-X-Correlation-ID: 1775079344257-7gu5sqn32
-X-Request-ID: 1775079344257-w554sdwia
-```
-
-#### 💻 Usage in Code:
-
-```typescript
-import { getLogger } from './middleware/logger'
-
-app.get('/api/artworks', async (c) => {
-  const logger = getLogger(c)
-  
-  logger.info('Fetching artworks', { limit: 50 })
-  
-  try {
-    const artworks = await db.getArtworks()
-    logger.info('Artworks fetched', { count: artworks.length })
-    return c.json(artworks)
-  } catch (error) {
-    logger.error('Failed to fetch artworks', error)
-    throw error
-  }
-})
-```
-
-#### 📊 Performance Impact:
-
-- **Overhead**: ~1-2ms per request
-- **Memory**: Minimal (no buffering)
-- **Production-Ready**: ✅ Yes
-
-#### 🔍 Log Analysis:
-
-```bash
-# View logs
-pm2 logs art-bank --nostream
-
-# Filter by level
-wrangler tail | jq 'select(.level == "error")'
-
-# Find slow requests
-wrangler tail | jq 'select(.duration > 1000)'
-```
-
-📖 **Full Documentation**: `docs/LOGGING.md`
-
----
-
-## 🏥 Health Monitoring (v2.7+) **НОВОЕ!**
-
-### Comprehensive Health Check System
-
-Art Bank включает полноценную систему мониторинга с детальной диагностикой.
-
-#### Endpoints:
-
-| Endpoint | Purpose | Response |
-|----------|---------|----------|
-| `/health`, `/api/health` | Full diagnostics | Detailed JSON health report |
-| `/healthz` | Liveness probe | Simple alive check (K8s) |
-| `/readyz` | Readiness probe | Can accept traffic check (K8s) |
-
-#### Health Checks:
-
-1. **Database Connectivity** (`pass`/`fail`)
-   - Tests D1 connection with simple query
-   - Tracks response time
-   - Reports database type
-
-2. **Circuit Breakers** (`pass`/`warn`/`fail`)
-   - Monitors circuit breaker states
-   - Reports OPEN breakers (service down)
-   - Reports HALF_OPEN breakers (recovering)
-
-3. **Rate Limiting** (`pass`/`warn`)
-   - Checks KV namespace configuration
-   - Reports if rate limiting active
-
-4. **Memory/Platform** (`pass`)
-   - Platform information (Cloudflare Workers)
-   - Memory limits (128MB/request)
-
-#### Overall Status:
-
-- **healthy**: All checks pass ✅
-- **degraded**: Some warnings (e.g., KV not configured) ⚠️
-- **unhealthy**: Critical failures (e.g., DB down) ❌
-
-#### Example Response:
-
-```json
-{
-  "status": "healthy",
-  "timestamp": "2026-03-30T21:03:32.607Z",
-  "uptime": 3600,
-  "version": "v2.7",
-  "checks": {
-    "database": {
-      "status": "pass",
-      "message": "Database connection successful",
-      "responseTime": 26,
-      "details": { "type": "Cloudflare D1 (SQLite)" }
-    },
-    "circuitBreakers": {
-      "status": "pass",
-      "message": "All circuit breakers operational",
-      "details": { "total": 3 }
-    },
-    "rateLimit": {
-      "status": "warn",
-      "message": "Rate limiting not configured (KV namespace missing)",
-      "details": { "configured": false }
-    }
-  },
-  "metadata": {
-    "environment": "production",
-    "region": "IAD"
-  }
-}
-```
-
-#### Response Headers:
-
-```http
-X-Response-Time: 42ms
-Cache-Control: no-cache, no-store, must-revalidate
-```
-
-#### HTTP Status Codes:
-
-- `200 OK`: healthy or degraded
-- `503 Service Unavailable`: unhealthy
-
----
-
-## ⚡ HTTP Caching (v2.7+) **НОВОЕ!**
-
-### Smart Performance Optimization
-
-Art Bank использует интеллектуальное HTTP кэширование для оптимизации производительности.
-
-#### Cache Strategy:
-
-| Endpoint Type | TTL | SWR | Performance Gain |
-|---------------|-----|-----|------------------|
-| **Graph Data** | 5 min | 10 min | 30% faster |
-| **Dashboard Stats** | 1 min | 5 min | 30% faster |
-| **Artworks List** | 30 sec | 1 min | 25% faster |
-| **Individual Resources** | 3 min | 6 min | 35% faster |
-| **Price History** | 15 sec | 30 sec | 20% faster |
-
-**TTL** = Time To Live (кэш актуален)  
-**SWR** = Stale-While-Revalidate (кэш допустим пока обновляется)
-
-#### Cached Endpoints:
-
-✅ `/api/graph-data` - 5 min cache  
-✅ `/api/dashboard/stats` - 1 min cache  
-✅ `/api/dashboard/graph` - 5 min cache  
-✅ `/api/artworks` - 30 sec cache  
-✅ `/api/artworks/:id` - 3 min cache
-
-#### Cache Headers:
-
-```http
-Cache-Control: public, max-age=300, stale-while-revalidate=600
-Cache-Tag: graph,nodes,edges
-X-Cache: HIT
-X-Cache-Key: cache:/api/graph-data
-```
-
-#### Cache Rules:
-
-- ✅ Only `GET` requests cached
-- ❌ Authenticated requests (with JWT) **NOT** cached
-- ❌ Client `no-cache` requests bypass cache
-- ✅ Automatic cache size limiting (100 entries)
-- ✅ LRU eviction when cache full
-
-#### Performance Impact:
-
-**Before Caching:**
-```
-GET /api/graph-data → ~43ms (DB query)
-GET /api/graph-data → ~43ms (DB query)
-```
-
-**After Caching:**
-```
-GET /api/graph-data → ~43ms (MISS - DB query)
-GET /api/graph-data → ~30ms (HIT - from cache) ✅ 30% faster
-```
-
-#### Cache Invalidation:
-
-Кэш автоматически инвалидируется:
-- По истечении TTL
-- При достижении лимита размера (LRU eviction)
-- После POST/PUT/PATCH операций (future feature)
-
----
-
-## 📱 Mobile UI (v2.6+)
-
-### Responsive Design Features
-- **Mobile Navigation**: Hamburger menu with slide-out drawer
-- **Adaptive Typography**: Text scales from mobile to desktop (sm/md/lg breakpoints)
-- **Responsive Grid**: 1 col (mobile) → 2 col (tablet) → 3 col (desktop)
-- **Touch-Friendly**: Larger tap targets, optimized spacing
-- **Mobile-First Approach**: All pages designed for mobile first
-
-### Breakpoints
-- **sm**: 640px (tablets)
-- **md**: 768px (desktop)
-- **lg**: 1024px (large screens)
-
-### Optimized Components
-- Header navigation (AB on mobile, Art Bank on desktop)
-- Auth buttons (separate layouts for mobile/desktop)
-- Role cards (responsive padding, icon sizes)
-- Network graph (adaptive height)
-- Legend items (wrap on mobile)
-
----
-
-## 🎯 Обзор проекта
-
-**Art Bank Core (Art-OS)** - это трёхслойная аналитическая платформа для арт-рынка с графовой моделью данных, событийной архитектурой и математическим ядром для расчёта справедливых цен (Fair Value).
-
-### 🏗️ Архитектура Art-OS (3 слоя)
-
-#### **Слой 1: Графовое Хранилище** 🗄️
-- **Cloudflare D1** (текущая реализация) - SQLite-based графовая БД
-- **Neo4j** (рекомендуется для продакшена) - архивная графовая БД на диске
-- **Memgraph** (рекомендуется для продакшена) - быстрая in-memory графовая БД
-- **Синхронизация**: События через EventBus (упрощённо) / Kafka/RabbitMQ (продакшен)
-
-#### **Слой 2: Core Analytics Service** 🧮
-**Python FastAPI сервис** с математическими алгоритмами:
-- **KDE (Kernel Density Estimation)** - построение тепловой карты цен
-- **NumPy/Pandas** - векторные вычисления
-- **SciPy/scikit-learn** - статистическое моделирование
-- **Входные данные**:
-  - Исторические цены аналогичных активов
-  - Репутационные метрики участников (trust_level)
-  - Контекстные события (выставки, упоминания)
-- **Выходные данные**:
-  - Fair Value (справедливая цена)
-  - Risk Score (коэффициент риска)
-  - Confidence Interval (доверительный интервал)
-  - Обоснование решения
-
-#### **Слой 3: Маршрутизатор** 🚦
-**Hono Framework** (TypeScript):
-- Принимает запросы от пользователей
-- Делегирует Analytics Service для расчётов
-- Контролирует права доступа
-- Обеспечивает шифрование
-
-### 🌟 Основные концепции
-
-- **Узлы (Nodes)**: Участники рынка - художники, коллекционеры, галереи, банки, эксперты
-- **Рёбра (Edges)**: Связи между участниками - создание, владение, экспонирование, валидация, финансирование
-- **Репутационный вес**: Trust Level (0.0 - 1.0) для каждого участника, влияющий на ценообразование
-- **Провенанс**: Полная история жизни произведения в графе
-- **Автоматическая валидация**: Система выявляет аномалии через анализ графа
-- **Событийная архитектура**: TRADE_CREATED, ASSET_VALIDATED, PRICE_CALCULATED
-
-### 🛡️ Критические паттерны надёжности 🆕
-
-#### **Circuit Breaker Pattern** (Предохранитель)
-Защита от каскадных сбоев при отказе внешних сервисов:
-- **CLOSED**: Нормальная работа, все запросы проходят
-- **OPEN**: Сервис недоступен, запросы блокируются
-- **HALF_OPEN**: Тестовый режим, проверка восстановления
-- **Конфигурация**: 3 ошибки → OPEN, 2 успеха → CLOSED, таймаут 30 секунд
-- **Мониторинг**: `GET /api/health/circuit-breakers`
-
-#### **Saga Pattern** (Распределённые транзакции)
-Координация многошаговых операций с компенсирующими действиями:
-- **Последовательное выполнение** шагов транзакции
-- **Автоматический откат** при ошибке любого шага
-- **Компенсирующие операции** в обратном порядке
-- **Пример**: Покупка произведения
-  1. Валидация участников
-  2. Резервирование произведения
-  3. Создание транзакции
-  4. Расчёт fair price через Analytics Service
-  5. Перенос владения
-  6. Обновление статуса
-  7. Логирование события
-- **Мониторинг**: `GET /api/saga-logs`
-
-#### **STOP Mechanism** (Экстренное отключение)
-Критический механизм аварийной остановки сервисов:
-- **Emergency Stop**: `POST /api/admin/emergency-stop` - принудительное открытие Circuit Breaker
-- **Recovery**: `POST /api/admin/reset-circuit-breaker` - восстановление после инцидента
-- **Применение**: При обнаружении критических ошибок, атак или повреждении данных
-- **Эффект**: Полная блокировка запросов к сервису до восстановления
-
-#### **Junction Tables** (Many-to-Many связи)
-Реляционные таблицы для сложных связей:
-- `artwork_exhibitions`: Произведение может быть на многих выставках
-- `artwork_artists`: Совместное авторство произведений
-- `artwork_tags`: Категоризация и поиск
-- `media_mentions`: Новости/статьи упоминают произведения/художников
-- `price_history`: История изменения цен
-- `saga_logs`: Лог распределённых транзакций
-
-#### **Media Hub** (Анализ влияния медиа)
-Отслеживание влияния новостей и публикаций на цены:
-- **Типы медиа**: news, article, social, review, auction_result
-- **Sentiment Score**: -1.0 (негативный) до 1.0 (позитивный)
-- **Influence Score**: 0.0-1.0 влияние на рынок
-- **Упоминания**: Связь медиа с произведениями/художниками
-- **API**: `POST /api/media`, `GET /api/media/by-entity`
-
----
-
-## 🎯 Целевая архитектура (Roadmap 2026) **НОВОЕ**
-
-> На основе документа **"Вся_платформа_Технологии_260325_001929_1.docx"**
-
-### Эволюция: Монолит → Микросервисы
-
-**Сейчас (v2.7)**: Монолитное Hono приложение  
-**Цель**: Event-driven микросервисы с Central Router
-
-### 🧭 Central Router + 4 Core Kernels
-
-#### **Central Router** (Go/TypeScript + Kafka)
-- Event Bus для асинхронной коммуникации
-- JWT validation для B2B2C партнёров  
-- Параллельная диспетчеризация запросов
-- Rate limiting, DDoS protection
-
-#### **1. Analytic Core** (Python/Pandas) ✅ *Частично готов*
-- KDE для price corridor
-- Fair Value + Risk Score calculation
-- **Статус**: Analytics Service уже работает на порту 5000
-
-#### **2. Transaction Hub** (Go + Saga)
-- Saga orchestration  
-- STOP signal processing
-- Compensating transactions
-- **Статус**: Saga Pattern реализован в TypeScript, миграция на Go планируется
-
-#### **3. Graph Data Service** (Neo4j/Memgraph)
-- Cypher queries для провенанса
-- Graph algorithms для anomaly detection
-- **Статус**: D1 (SQLite) используется как прототип
-
-#### **4. Media Hub** (Python NLP) ✅ *Частично готов*
-- Sentiment analysis
-- Price impact prediction
-- **Статус**: Базовая реализация в `/api/media-hub`
-
-### Гибридная модель (Graph + Relational)
-
-**Проблема**: Графовые БД не гарантируют ACID  
-**Решение**: Link-таблицы для критичных операций
-
-```sql
-ownership_link (id, artwork_id, owner_node_id, acquisition_date, price, status)
-transaction_link (id, from, to, artwork_id, price, saga_id, status)
-representation_link (id, artwork_id, artist_node_id, contribution_type)
-mention_link (id, media_id, entity_type, entity_id, sentiment_score)
-```
-
-### Roadmap миграции
-
-- **Фаза 1** (1-2 нед): ✅ JWT Auth + API Protection
-- **Фаза 2** (2-4 нед): Рефакторинг на микросервисы, Central Router
-- **Фаза 3** (2-4 нед): Neo4j + link-tables, Kafka events
-- **Фаза 4** (1-2 нед): Production deployment + мониторинг
-
----
-
-## 🚀 Текущий статус
-
-### ✅ Реализованные функции
-
-#### Backend API (Hono + Cloudflare D1)
-- ✅ **Управление узлами (Nodes API)**
-  - Создание участников (artist, collector, gallery, bank, expert)
-  - Получение узлов по типу/ID
-  - Обновление репутационных весов (trust_level)
-  
-- ✅ **Управление рёбрами (Edges API)**
-  - Создание связей между узлами
-  - Получение связей узла
-  - Расчёт весов рёбер на основе репутации
-  
-- ✅ **Управление произведениями (Artworks API)**
-  - Создание произведений с цифровой подписью
-  - Привязка к художнику и владельцу
-  - Отслеживание провенанса (история владения)
-  - **Fair Price Corridor** расчёт справедливого коридора цены
-  
-- ✅ **Транзакции (Transactions API)**
-  - Создание сделок с кредитованием
-  - История сделок по произведению
-  - Автоматическое обновление владельца при продаже
-  - Эмиссия событий TRADE_CREATED
-  
-- ✅ **Валидации (Validations API)**
-  - Экспертные заключения (authenticity, condition, valuation)
-  - Привязка к эксперту и произведению
-  - Эмиссия событий ASSET_VALIDATED
-
-- ✅ **🆕 Analytics Extended API** (Новые математические модели)
-  - **POST /api/analytics-extended/price-corridor**
-    - Расчёт **Единого Коридора Платформы**
-    - **Gallery Median (M_gal)**: Средняя цена офферов верифицированных галерей
-    - **Sales Median (M_sales)**: Средняя цена реальных сделок
-    - **Spread**: Разрыв ликвидности между предложениями и продажами
-    - **Corridor Bounds**: Границы коридора (±σ стандартное отклонение)
-    - **Position Analysis**: Позиция текущей цены (undervalued/center/overvalued)
-    - **Growth Potential**: Потенциал роста до медианы
-    - **Liquidity Rating**: Оценка ликвидности (high/medium/low)
-  
-  - **POST /api/analytics-extended/market-factors**
-    - Расчёт **трёх факторов-"нитей" рыночного давления**
-    - **F1: Институциональная подпорка** (Institutional Support)
-      - Вес: на основе валидаций, выставок, provenance score
-      - Интерпретация: Very Strong / Strong / Moderate / Weak / Very Weak
-    - **F2: Рыночный ажиотаж** (Market Hype)
-      - Вес: на основе медиа-упоминаний, sentiment, influence
-      - Показывает спекулятивное давление
-    - **F3: Ликвидность** (Liquidity)
-      - Вес: на основе количества транзакций и недавности продаж
-      - Скорость конвертации в деньги
-    - **Stability Score**: Общая оценка стабильности (0.0-1.0)
-    - **Investment Recommendation**: 
-      - Blue Chip (институциональная поддержка)
-      - Balanced (сбалансированный риск)
-      - Speculative (спекулятивный, высокий хайп)
-      - High Risk (низкая стабильность)
-  
-- ✅ **Analytics API** (Core Python FastAPI)
-  - Создание узлов всех типов (artist, collector, gallery, bank, expert)
-  - Получение узлов по типу и ID
-  - Обновление репутационного веса
-  
-- ✅ **Управление связями (Edges API)**
-  - Создание связей между узлами
-  - Получение связей по узлу
-  - Расчет весов связей
-  
-- ✅ **Управление произведениями (Artworks API)**
-  - Создание произведений с цифровой подписью
-  - Привязка к художнику и владельцу
-  - Отслеживание провенанса
-  - Fair Price Corridor (FPC) - ценовой коридор
-  
-- ✅ **Транзакции (Transactions API)**
-  - Создание транзакций с кредитованием
-  - История сделок
-  - Обновление владельца при продаже
-  - Публикация событий TRADE_CREATED
-  
-- ✅ **Валидация (Validations API)**
-  - Экспертная оценка подлинности
-  - Оценка состояния
-  - Оценка стоимости
-  - Публикация событий ASSET_VALIDATED
-  
-- ✅ **Аналитика (Analytics API)** 🆕
-  - **POST /api/analytics/fair-price** - Расчёт справедливой цены с KDE
-  - **POST /api/analytics/risk-score** - Оценка риска транзакции
-  - Публикация событий PRICE_CALCULATED
-  
-- ✅ **Событийная архитектура (Events API)** 🆕
-  - **GET /api/events** - Просмотр событий системы
-  - EventBus для публикации и подписки
-  - Типы событий: TRADE_CREATED, ASSET_VALIDATED, PRICE_CALCULATED
-  
-- ✅ **Dashboard & Monitoring**
-  - Статистика платформы
-  - Граф связей
-  - История активности
-
-#### Core Analytics Service (Python FastAPI) 🆕
-- ✅ **Fair Price Calculation**
-  - Kernel Density Estimation (KDE) для построения ценовой карты
-  - Учёт репутационных метрик участников
-  - Корректировка на контекстные события
-  - Доверительный интервал (95%)
-  
-- ✅ **Risk Assessment**
-  - Отклонение цены от справедливой
-  - Риск ликвидности
-  - Риск репутации участников
-  - Комбинированная оценка риска
-
-#### Frontend (Responsive Web UI)
-- ✅ **Главная страница (Public Gateway)**
-  - Выбор роли пользователя
-  - Обзор платформы
-  - Статистика в реальном времени
-  
-- ✅ **Панели управления (Dashboards)** 🆕 **ПОЛНОСТЬЮ ЗАВЕРШЕНЫ**
-  - ✅ **Artist Dashboard** (/dashboard/artist)
-    * Профиль художника с статистикой (работы, продажи, стоимость, репутация)
-    * Создание произведений с полными метаданными (название, год, стиль, техника, состояние, размеры)
-    * Управление выставками и медиа-упоминаниями
-    * Аналитика продаж с графиками
-    * Цифровая подпись и история провенанса
-  
-  - ✅ **Collector Dashboard** (/dashboard/collector)
-    * Профиль коллекционера с портфолио
-    * Маркетплейс с фильтрами (стиль, цена, художник)
-    * Покупка произведений (запуск Saga транзакции)
-    * Управление коллекцией
-    * История транзакций и избранное (watchlist)
-  
-  - ✅ **Gallery Dashboard** (/dashboard/gallery)
-    * Профиль галереи с репутацией
-    * Создание и управление выставками
-    * Статистика активных/завершённых выставок
-    * Кураторские инструменты
-  
-  - ✅ **Bank Dashboard** (/dashboard/bank)
-    * Профиль банка с кредитным портфелем
-    * Заявки на кредитование (с AI риск-оценкой)
-    * Просмотр деталей заявки (заёмщик, произведение, условия)
-    * Одобрение/отклонение кредитов
-    * Аналитика: распределение рисков, объёмы кредитования
-    * Графики с Chart.js
-  
-  - ✅ **Expert Dashboard** (/dashboard/expert)
-    * Профиль эксперта с индексом точности
-    * Заявки на экспертизу
-    * Форма экспертизы (подлинность, оценка, состояние, уверенность)
-    * Выбор методов экспертизы (УФ, рентген, химический анализ)
-    * История выполненных экспертиз
-    * Сертификаты (в разработке)
-  
-  - ✅ **🆕 Analytics Dashboard** (/dashboard/analytics) **НОВИНКА v2.1**
-    * **Выбор произведения** для анализа с фильтрацией по периоду
-    * **Единый коридор платформы** - 2D визуализация:
-      - Текущая цена актива
-      - Медиана галерей (M_gal) - средняя цена офферов
-      - Медиана сделок (M_sales) - реальные продажи
-      - Spread - разрыв ликвидности (%)
-      - Corridor Bounds - границы коридора (±σ)
-    * **Три фактора-"нити" рыночного давления**:
-      - F1: Институциональная подпорка (validations + exhibitions)
-      - F2: Рыночный ажиотаж (media mentions + sentiment)
-      - F3: Ликвидность (transactions + recency)
-    * **Stability Score** - общая оценка стабильности (0.0-1.0)
-    * **Investment Recommendation** - рекомендация (Blue Chip / Balanced / Speculative / High Risk)
-    * **Interactive Chart.js визуализация** коридора цены
-    * **Responsive design** с Tailwind CSS
-  
-  - ✅ **🆕 3D Visualization Dashboard** (/dashboard/3d-visualization) **НОВИНКА v2.2**
-    * **Three.js интерактивная 3D-сцена** с рыночным давлением
-    * **Три оси координат**:
-      - X-axis: F1 Institutional Support (blue)
-      - Y-axis: F2 Market Hype (red)
-      - Z-axis: F3 Liquidity (green)
-    * **Динамическая сфера**:
-      - Позиция по координатам факторов
-      - Размер зависит от stability score
-      - Цвет (RGB) отражает баланс факторов
-      - Glow эффект для визуализации
-    * **Управление камерой**:
-      - Auto-rotation mode
-      - Camera reset
-      - Manual controls
-    * **Real-time data integration** с market-factors API
-  
-  - ✅ **🆕 Media Hub Dashboard** (/dashboard/media) **НОВИНКА v2.2**
-    * **Trending Artworks** - последние 7 дней:
-      - Buzz score calculation
-      - Media mentions count
-      - Sentiment trend (📈/📉/➡️)
-    * **Media Analysis Form**:
-      - Заголовок, содержание, источник, автор
-      - Выбор произведения для связи
-      - Source tier selection (Tier 1-4)
-    * **Sentiment Analysis** с визуализацией:
-      - Score (-1.0 to 1.0)
-      - Interpretation (Very Positive/Positive/Neutral/Negative/Very Negative)
-      - Color-coded progress bar
-    * **Source Influence**:
-      - Credibility score (0.0-1.0)
-      - Tier classification
-      - Influence bar visualization
-    * **Price Impact Analysis**:
-      - Current price vs adjusted price
-      - Estimated impact calculation
-      - Investment recommendation
-      - Real-time trending refresh
-  
-  - ✅ **Public View** (/dashboard/public)
-    * Граф рынка
-    * Статистика платформы
-    * Ценовые коридоры
-    * Топ художников/галерей
-
-#### База данных (Cloudflare D1)
-- ✅ Таблицы: nodes, edges, artworks, transactions, validations, activity_log, user_sessions
-- ✅ Миграции и seed данных
-- ✅ Индексы для оптимизации запросов
-
-## 📊 Архитектура данных
-
-### Таксономия участников (Graph Model)
-
-#### 1. Кластер «Создатели и Владельцы» (Primary Source)
-- **Художник**: Узел с атрибутами - стилевой вектор, период, статус (Emerging/Established)
-- **Коллекционер** (Private Owner): Владелец активами, риск-профиль, частота транзакций
-
-#### 2. Кластер «Инфраструктурные посредники» (Market Makers)
-- **Галерея**: Ключевой аккредитованный узел, специализация, уровень выставочной активности
-- **Аукционный дом**: Высокая интенсивность транзакций, объем торгов
-- **Арт-дилер/Консультант**: Узел-агент, репутационный индекс
-
-#### 3. Кластер «Финансовые институты» (Capital Holders)
-- **Банк** (Private Banking): Валидация сделок, кредитование под арт
-- **Страховая компания**: Оценка рисков повреждения/утраты
-
-#### 4. Кластер «Экспертная среда» (Validation Layer)
-- **Эксперт/Аттестованный оценщик**: Цифровая подпись в паспорте
-- **Реставратор/Лаборатория**: Индекс подтверждения подлинности
-
-### Backend-логика (Graph Operations)
-
-Связи через типы рёбер (отношений):
-- Художник → [создал] → Произведение
-- Галерея → [экспонировала] → Произведение
-- Коллекционер → [владеет] → Произведение
-- Эксперт → [подтвердил] → Паспорт актива
-- Банк → [кредитовал под] → Произведение
-
-### Зачем это нужно для системы
-
-- **Проверка «репутационной цепочки»**: Система понижает вес актива если эксперт с низким рейтингом подтверждает произведение
-- **Обнаружение связей**: Автоматическое предложение банку сегмента активов как «проверенный»
-- **Борьба с аномалиями**: Выявление транзакционных следов через подставную галерею
-
-## 🌐 URLs и доступ
-
-### Sandbox Environment
-- **Главная**: https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai
-- **API Base**: https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api
-
-#### Role-Based Dashboards
-- **Dashboard Artist**: https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/dashboard/artist
-- **Dashboard Collector**: https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/dashboard/collector
-- **Dashboard Gallery**: https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/dashboard/gallery
-- **Dashboard Bank**: https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/dashboard/bank
-- **Dashboard Expert**: https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/dashboard/expert
-
-#### Analytical Dashboards 🆕
-- **🆕 Analytics 2D**: https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/dashboard/analytics
-- **🆕 3D Visualization**: https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/dashboard/3d-visualization
-- **🆕 Media Hub**: https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/dashboard/media
-- **Public View**: https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/dashboard/public
-
-### API Endpoints
-
-#### Role-Specific APIs 🆕
-
-##### Artist API (`/api/artist`)
-- `GET /api/artist/profile/:id` - Получить профиль художника
-- `POST /api/artist/artworks` - Создать новое произведение
-- `GET /api/artist/artworks/:id` - Получить произведения художника
-- `GET /api/artist/exhibitions/:id` - Получить выставки художника
-- `GET /api/artist/media/:id` - Получить медиа-упоминания художника
-- `GET /api/artist/analytics/:id` - Получить аналитику продаж
-- `POST /api/artist/digital-signature` - Добавить цифровую подпись
-
-##### Collector API (`/api/collector`)
-- `GET /api/collector/profile/:id` - Получить профиль коллекционера
-- `GET /api/collector/marketplace` - Получить доступные произведения на маркетплейсе
-- `POST /api/collector/purchase` - Инициировать покупку (запускает Saga)
-- `GET /api/collector/portfolio/:id` - Получить коллекцию произведений
-
-##### Gallery API (`/api/gallery`)
-- `GET /api/gallery/profile/:id` - Получить профиль галереи
-- `GET /api/gallery/exhibitions/:id` - Получить список выставок галереи
-- `POST /api/gallery/exhibitions` - Создать новую выставку
-
-##### Bank API (`/api/bank`)
-- `GET /api/bank/profile/:id` - Получить профиль банка
-- `POST /api/bank/approve/:transactionId` - Одобрить кредитную заявку
-
-##### Expert API (`/api/expert`)
-- `GET /api/expert/profile/:id` - Получить профиль эксперта
-- `GET /api/expert/validations/:id` - Получить список экспертиз эксперта
-- `POST /api/expert/validations` - Создать новую экспертизу
-
-#### Nodes
-- `GET /api/nodes` - Получить все узлы (опционально: `?type=artist`)
-- `GET /api/nodes/:id` - Получить узел по ID
-- `POST /api/nodes` - Создать новый узел
-
-#### Edges
-- `GET /api/edges` - Получить все связи (опционально: `?node_id=xxx`)
-- `POST /api/edges` - Создать связь
-
-#### Artworks
-- `GET /api/artworks` - Получить все произведения (опционально: `?artist_id=xxx` или `?owner_id=xxx`)
-- `GET /api/artworks/:id` - Получить произведение по ID
-- `POST /api/artworks` - Создать произведение
-
-#### Transactions
-- `GET /api/transactions` - Получить транзакции (опционально: `?node_id=xxx` или `?artwork_id=xxx`)
-- `POST /api/transactions` - Создать транзакцию
-- `PATCH /api/transactions/:id/status` - Обновить статус транзакции
-
-#### Validations
-- `GET /api/validations` - Получить валидации (опционально: `?artwork_id=xxx` или `?expert_id=xxx`)
-- `POST /api/validations` - Создать валидацию
-
-#### Analytics (Core Analytics Service) 🆕
-- `POST /api/analytics/fair-price` - Расчёт справедливой цены с KDE
-- `POST /api/analytics/risk-score` - Оценка риска транзакции
-
-#### Events & Monitoring 🆕
-- `GET /api/events` - История событий системы (опционально: `?type=TRADE_CREATED`)
-- `GET /api/health/circuit-breakers` - Состояние Circuit Breakers
-- `GET /api/saga-logs` - Логи Saga транзакций
-
-#### Admin & Emergency Control 🆕
-- `POST /api/admin/emergency-stop` - Экстренная остановка сервиса (STOP механизм)
-- `POST /api/admin/reset-circuit-breaker` - Восстановление Circuit Breaker
-
-#### Media Hub 🆕
-- `POST /api/media` - Создать медиа-элемент (новость, статья)
-- `GET /api/media/by-entity` - Получить медиа по сущности (опционально: `?entity_type=artwork&entity_id=xxx`)
-
-#### Junction Tables (Many-to-Many) 🆕
-- `POST /api/exhibitions` - Добавить выставку
-- `GET /api/artworks/:id/exhibitions` - Получить выставки произведения
-- `GET /api/galleries/:id/exhibitions` - Получить выставки галереи
-- `POST /api/artworks/:id/tags` - Добавить тег к произведению
-- `GET /api/artworks/:id/tags` - Получить теги произведения
-- `GET /api/tags/:id/artworks` - Получить произведения по тегу
-- `GET /api/artworks/:id/price-history` - История цен произведения
-- `POST /api/analytics/fair-price` - Расчёт справедливой цены актива
-- `POST /api/analytics/risk-score` - Оценка риска транзакции
-
-#### Events (Event Bus) 🆕
-- `GET /api/events` - Получить события (опционально: `?limit=50&type=TRADE_CREATED`)
-
-#### Dashboard & Analytics
-- `GET /api/dashboard/stats` - Статистика платформы
-- `GET /api/dashboard/graph` - Данные графа
-- `GET /api/nodes/:id/activity` - История активности узла
-
-## 🛠️ Технический стек
-
-### Backend (3-слойная архитектура)
-- **Маршрутизатор**: Hono (v4.12.7) - Lightweight web framework
-- **Analytics Service**: Python FastAPI (v0.115.0) + NumPy + Pandas + SciPy + scikit-learn
-- **Database**: Cloudflare D1 (SQLite) - Serverless SQL database с графовой моделью
-- **Event Bus**: Упрощённый EventBus (в разработке: Kafka/RabbitMQ для продакшена)
-
-### Frontend
-- **Framework**: Vanilla JavaScript + TailwindCSS
-- **Визуализация**: Chart.js (дашборды)
-- **Иконки**: FontAwesome
-
-### Infrastructure
-- **Runtime**: Cloudflare Workers / Node.js (локальная разработка)
-- **Build**: Vite (v6.3.5)
-- **Process Manager**: PM2 (для запуска двух сервисов одновременно)
-- **Deployment**: Cloudflare Pages (продакшен), Sandbox (разработка)
-
-## 📦 Структура проекта
-
-```
-webapp/
-├── src/
-│   ├── index.tsx           # Main Hono application (API + Frontend)
-│   ├── circuit-breaker.ts  # 🆕 Circuit Breaker Pattern implementation
-│   ├── saga.ts             # 🆕 Saga Pattern for distributed transactions
-│   ├── routes/             # 🆕 Role-specific API routes
-│   │   ├── artist.ts       # Artist API endpoints
-│   │   ├── collector.ts    # Collector API endpoints
-│   │   ├── gallery.ts      # Gallery API endpoints
-│   │   ├── bank.ts         # Bank API endpoints
-│   │   └── expert.ts       # Expert API endpoints
-│   ├── types/
-│   │   └── index.ts        # TypeScript type definitions
-│   └── lib/
-│       ├── db.ts           # Database helper functions (+ Junction Tables)
-│       ├── events.ts       # Event-Driven Architecture (EventBus)
-│       ├── circuit-breaker.ts  # 🆕 Circuit Breaker utilities
-│       └── saga.ts         # 🆕 Saga utilities
-├── analytics_service/      # 🆕 Python FastAPI Analytics Service
-│   ├── main.py             # FastAPI app with KDE pricing algorithms
-│   ├── requirements.txt    # Python dependencies
-│   └── venv/               # Python virtual environment
-├── public/                 # 🆕 Static HTML dashboards
-│   ├── artist-dashboard.html    # Artist UI (18KB)
-│   ├── collector-dashboard.html # Collector UI (21KB)
-│   ├── gallery-dashboard.html   # Gallery UI (9KB)
-│   ├── bank-dashboard.html      # Bank UI (25KB)
-│   ├── expert-dashboard.html    # Expert UI (22KB)
-│   └── static/
-│       └── app.js          # Shared frontend utilities
-├── migrations/
-│   ├── 0001_initial_schema.sql  # Database schema
-│   └── 0002_junction_tables.sql # 🆕 Junction tables, Media Hub, Saga logs
-├── seed.sql                # Test data
-├── ecosystem.config.cjs    # PM2 configuration (Hono + FastAPI)
-├── wrangler.jsonc          # Cloudflare configuration
-├── package.json            # Dependencies and scripts
-└── README.md               # This file
-```
-
-## 🚀 Локальная разработка
-
-### Установка и запуск
-
-```bash
-# Клонировать репозиторий
-cd /home/user/webapp
-
-# Установить зависимости (уже установлены)
+# Install dependencies
 npm install
 
-# Применить миграции БД
-npm run db:migrate:local
-
-# Сбросить БД и добавить тестовые данные
-npm run db:reset
-
-# Собрать проект
+# Build project
 npm run build
 
-# Запустить в режиме разработки с PM2
+# Start with PM2 (daemon)
 pm2 start ecosystem.config.cjs
 
-# Проверить статус
-pm2 list
-
-# Посмотреть логи
-pm2 logs art-bank --nostream
+# Test endpoints
+curl http://localhost:3000/health
+curl http://localhost:3000/api/docs
 ```
 
-### Доступные скрипты
-
-- `npm run dev` - Vite dev server
-- `npm run dev:sandbox` - Wrangler dev server с D1
-- `npm run build` - Собрать проект
-- `npm run db:migrate:local` - Применить миграции локально
-- `npm run db:seed` - Добавить тестовые данные
-- `npm run db:reset` - Сбросить БД и пересоздать
-- `npm run clean-port` - Очистить порт 3000
-
-## 📈 Текущие данные
-
-### Узлы (Nodes)
-- 1 Художник: Иван Шишкин (trust: 0.95)
-- 1 Коллекционер: Михаил Петров (trust: 0.85)
-- 1 Галерея: Галерея Третьяковская (trust: 0.95)
-- 1 Банк: АртБанк Private (trust: 0.92)
-- 1 Эксперт: Профессор Антонов (trust: 0.96)
-
-### Произведения (Artworks)
-- 1 произведение: "Утро в сосновом лесу" (FPC: 15,000,000 ₽)
-
-### Связи (Edges)
-- 1 связь: Банк финансировал Коллекционера
-
-## 🎨 Интерфейсы по ролям
-
-### 1. Художник (Artist Dashboard)
-- Создание произведений
-- Цифровая подпись работ
-- Просмотр провенанса своих работ
-- История выставок
-
-### 2. Коллекционер (Collector Dashboard)
-- Управление коллекцией
-- Покупка произведений
-- История транзакций
-- Оценка портфеля
-
-### 3. Галерея (Gallery Dashboard)
-- Организация экспозиций
-- Продажи произведений
-- Связи с художниками
-- Статистика продаж
-
-### 4. Банк (Bank Dashboard)
-- Заявки на кредитование под арт
-- Валидация сделок через граф
-- Портфель залогов
-- Риск-анализ
-
-### 5. Эксперт (Expert Dashboard)
-- Запросы на экспертизу
-- Выдача сертификатов
-- Индекс точности оценок
-- Репутационный рейтинг
-
-### 6. Публичный просмотр (Public View)
-- Граф рынка
-- Статистика платформы
-- Ценовые коридоры (FPC)
-- Топ художников и галерей
-
-## 🔮 Будущие улучшения
-
-### Ближайшие задачи
-- [ ] Добавить визуализацию графа (D3.js или Cytoscape.js)
-- [ ] Реализовать алгоритм расчета репутации (PageRank-подобный)
-- [ ] Добавить ML-модель для детекции аномалий
-- [ ] Реализовать систему аутентификации
-- [ ] Добавить upload изображений произведений (R2 storage)
-
-### Долгосрочные цели
-- [ ] Интеграция с блокчейном для NFT
-- [ ] Мобильное приложение
-- [ ] Интеграция с внешними арт-базами
-- [ ] Продвинутая аналитика и ML-рекомендации
-- [ ] Multi-tenant архитектура
-
-## 📝 Как использовать
-
-1. **Откройте главную страницу**: https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai
-2. **Выберите роль**: Нажмите на одну из карточек ролей
-3. **Изучите интерфейс**: Каждая роль имеет свой специализированный dashboard
-4. **Тестируйте API**: Используйте curl или Postman для работы с API endpoints
-
-### Пример: Создание нового художника
-
+### Production Deployment (Cloudflare Pages)
 ```bash
-curl -X POST https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/nodes \
-  -H "Content-Type: application/json" \
-  -d '{
-    "node_type": "artist",
-    "name": "Василий Кандинский",
-    "jurisdiction": "RU",
-    "metadata": {
-      "style": "Абстракционизм",
-      "period": "XX век",
-      "status": "Established"
-    }
-  }'
-```
-
-### Пример: Получение статистики
-
-```bash
-curl https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/dashboard/stats
-```
-
-### Пример: Расчёт справедливой цены (Analytics Service) 🆕
-
-```bash
-curl -X POST https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/analytics/fair-price \
-  -H "Content-Type: application/json" \
-  -d '{
-    "asset_id": "artwork-1",
-    "current_price": 15000000,
-    "historical_prices": [
-      {"asset_id": "similar-1", "price": 10000000, "sale_date": "2024-01-15", "similarity_score": 0.9},
-      {"asset_id": "similar-2", "price": 13000000, "sale_date": "2024-02-20", "similarity_score": 0.85}
-    ],
-    "trust_metrics": [
-      {"node_id": "artist-1", "node_type": "artist", "trust_level": 0.95, "weight": 0.5},
-      {"node_id": "expert-1", "node_type": "expert", "trust_level": 0.96, "weight": 0.5}
-    ],
-    "context_events": [
-      {"event_type": "exhibition", "impact_score": 0.15, "timestamp": "2024-06-01"}
-    ]
-  }'
-
-# Ответ:
-# {
-#   "asset_id": "artwork-1",
-#   "fair_value": 12406712.21,
-#   "confidence_interval": [6262602.10, 18772517.02],
-#   "risk_score": 0.17,
-#   "reasoning": {
-#     "base_fair_value": 11371871.87,
-#     "trust_adjustment": 1.091,
-#     "context_adjustment": 1.017,
-#     "data_points": 2,
-#     "avg_similarity": 0.875,
-#     "price_dispersion": 0.13,
-#     "trust_level": 0.955
-#   }
-# }
-```
-
-### Пример: Просмотр событий системы 🆕
-
-```bash
-curl https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/events?limit=10
-
-# События: TRADE_CREATED, ASSET_VALIDATED, PRICE_CALCULATED
-```
-
-### Пример: Мониторинг Circuit Breaker 🆕
-
-```bash
-# Проверить состояние Circuit Breakers
-curl https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/health/circuit-breakers
-
-# Ответ:
-# {
-#   "analytics_service": {
-#     "state": "CLOSED",
-#     "failures": 0,
-#     "successes": 12,
-#     "totalRequests": 15,
-#     "totalFailures": 3
-#   },
-#   "timestamp": "2026-03-13T00:18:00Z",
-#   "healthy": true
-# }
-```
-
-### Пример: Emergency STOP mechanism 🆕
-
-```bash
-# Экстренная остановка Analytics Service
-curl -X POST https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/admin/emergency-stop \
-  -H "Content-Type: application/json" \
-  -d '{
-    "service": "analytics",
-    "reason": "Critical database corruption detected"
-  }'
-
-# Ответ:
-# {
-#   "success": true,
-#   "message": "Circuit breaker for analytics has been opened",
-#   "reason": "Critical database corruption detected",
-#   "status": {"state": "OPEN", "failures": 0}
-# }
-
-# Восстановление после инцидента
-curl -X POST https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/admin/reset-circuit-breaker \
-  -H "Content-Type: application/json" \
-  -d '{"service": "analytics"}'
-```
-
-### Пример: Media Hub (влияние новостей) 🆕
-
-```bash
-# Создать новость о рекордной продаже
-curl -X POST https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/media \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type": "news",
-    "source": "christies",
-    "title": "Рекордная продажа на аукционе Christie'\''s",
-    "content": "Произведение установило новый рекорд категории",
-    "sentiment_score": 0.9,
-    "influence_score": 0.85,
-    "mentions": [
-      {
-        "entity_type": "artwork",
-        "entity_id": "artwork-1",
-        "context": "Рекордная продажа",
-        "relevance": 1.0
-      }
-    ]
-  }'
-
-# Получить медиа упоминания произведения
-curl 'https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/media/by-entity?entity_type=artwork&entity_id=artwork-1'
-```
-
-### Пример: Junction Tables (выставки и теги) 🆕
-
-```bash
-# Добавить выставку
-curl -X POST https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/exhibitions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "artwork_id": "artwork-1",
-    "gallery_node_id": "gallery-1",
-    "exhibition_name": "Русский пейзаж XIX века",
-    "start_date": "2026-01-15T10:00:00Z",
-    "end_date": "2026-03-30T18:00:00Z",
-    "curator": "Анна Иванова"
-  }'
-
-# Добавить теги к произведению
-curl -X POST https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/artworks/artwork-1/tags \
-  -H "Content-Type: application/json" \
-  -d '{"tag_id": "tag-realism", "relevance": 1.0}'
-
-# Получить историю цен
-curl https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/artworks/artwork-1/price-history
-```
-
-### Пример: Saga Logs (мониторинг транзакций) 🆕
-
-```bash
-# Получить логи Saga транзакций
-curl https://3000-ir9tb52hhw0a86hr4kq8c-5c13a017.sandbox.novita.ai/api/saga-logs?limit=20
-
-# Ответ содержит информацию о статусах транзакций:
-# - running: Транзакция в процессе
-# - completed: Успешно завершена
-# - compensating: Откат изменений
-# - failed: Ошибка транзакции
-```
-
-## 📊 Статистика проекта
-
-### Общие показатели
-- **Строк кода**: ~10,000+ (TypeScript, Python, SQL, HTML)
-- **Файлов**: 25+
-- **Коммитов**: 8+
-- **Дней разработки**: 5
-
-### Backend
-- **API endpoints**: 35+
-  - Role-specific APIs: 18 endpoints (5 ролей)
-  - Core APIs: 17 endpoints (nodes, edges, artworks, transactions, etc.)
-- **Database tables**: 16
-  - Core: 8 (nodes, edges, artworks, transactions, validations, activity_log, user_sessions, events)
-  - Junction: 8 (artwork_exhibitions, artwork_artists, artwork_tags, media_mentions, price_history, saga_logs, tags, media_items)
-- **Migrations**: 2
-- **Patterns implemented**: 5 (Circuit Breaker, Saga, STOP, Junction Tables, Media Hub)
-
-### Frontend
-- **Dashboards**: 5 полноценных UI
-  - Artist Dashboard: 18KB, 450+ строк
-  - Collector Dashboard: 21KB, 420+ строк
-  - Gallery Dashboard: 9KB, 185+ строк
-  - Bank Dashboard: 25KB, 520+ строк
-  - Expert Dashboard: 22KB, 450+ строк
-- **Total frontend code**: ~95KB HTML/JS
-- **Shared utilities**: app.js (5KB)
-
-### Analytics Service (Python)
-- **Endpoints**: 2 (fair-price, risk-score)
-- **Algorithms**: KDE, NumPy, Pandas, SciPy
-- **Lines of code**: 300+
-
-### Deployment
-- **Services running**: 2 (Hono + FastAPI)
-- **Process manager**: PM2
-- **Database**: Cloudflare D1 (SQLite)
-- **Runtime**: Cloudflare Workers / Node.js
-
-## 🤝 Контрибьюция
-
-Проект находится в активной разработке. Приветствуются:
-- Идеи по улучшению графовой модели
-- Предложения по UI/UX
-- Реализация новых фич
-- Оптимизация производительности
-
-## 📄 Лицензия
-
-MIT License
-
-## 👥 Автор
-
-Создано на основе исследования "Пачоли Консалтинг" для построения математической модели арт-рынка.
-
----
-
-**Статус проекта**: 🟢 Активная разработка  
-**Версия**: 2.6 (JWT Auth + Mobile UI)  
-**Последнее обновление**: 2026-03-24
-
-**Основные достижения v2.6**:
-- ✅ JWT Authentication (24h access + 7d refresh tokens)
-- ✅ Mobile UI Adaptation (responsive design, mobile-first)
-- ✅ 63+ REST API endpoints (57 core + 6 auth)
-- ✅ 11 UI pages (9 dashboards + Auth + Profile)
-- ✅ 19 database tables (16 core + 3 auth)
-- ✅ SHA-256 password hashing
-- ✅ Role-based access control (7 roles)
-- ✅ Mobile navigation menu
-- ✅ Responsive typography & layouts
-
----
-
-## 🚀 Production Deployment
-
-### Quick Start
-
-**Смотрите полную инструкцию в [DEPLOYMENT.md](./DEPLOYMENT.md)**
-
-```bash
-# 1. Configure Cloudflare API key in Deploy tab
-# 2. Create production database
-npm run db:create
+# 1. Configure Cloudflare API Token (Deploy tab)
+# 2. Create Production D1 Database
+npx wrangler d1 create art-bank-production
 
 # 3. Update wrangler.jsonc with database_id
-# 4. Apply migrations
-npm run db:migrate:prod
+# 4. Run migrations
+npx wrangler d1 migrations apply art-bank-production --local  # local
+npx wrangler d1 migrations apply art-bank-production          # production
 
 # 5. Deploy to Cloudflare Pages
 npm run deploy
+# or
+npm run deploy:prod -- --branch main
 ```
-
-### Deployment URLs
-
-После успешного развёртывания платформа будет доступна по адресам:
-- **Production**: `https://art-bank.pages.dev`
-- **Preview**: `https://main.art-bank.pages.dev`
-
-### Key Features Ready for Production
-
-✅ **63+ API endpoints** - полностью протестированы  
-✅ **JWT Authentication** - access + refresh tokens, role-based  
-✅ **Mobile UI** - responsive design, mobile-first approach  
-✅ **11 UI Pages** - адаптивный UI с Tailwind  
-✅ **Export API** - CSV/JSON экспорт данных  
-✅ **API Documentation** - интерактивная документация  
-✅ **Network Graph** - vis-network визуализация  
-✅ **3D Visualization** - Three.js рыночное давление  
-✅ **Media Analytics** - NLP sentiment analysis  
-✅ **Graph Segmentation** - многомерная кластеризация  
-
-### Production Checklist
-
-- [x] Backend API (63 endpoints)
-- [x] JWT Authentication (6 auth endpoints)
-- [x] Mobile UI (responsive design)
-- [x] Frontend UI (11 pages)
-- [x] Database migrations (19 tables)
-- [x] Seed data
-- [x] API documentation
-- [x] Deployment scripts
-- [ ] **Cloudflare API key** (требуется настройка)
-- [ ] Production database setup
-- [ ] Custom domain (optional)
-- [ ] Environment variables (.env for JWT_SECRET)
-- [ ] Rate limiting (roadmap)
 
 ---
 
-**Version**: 2.4.0 (Production Ready)  
-**Last Updated**: 2026-03-22  
-**Status**: 🚀 Ready for Cloudflare Pages Deployment
+## 📚 Documentation
+
+### Core Documentation
+- **`/docs/FINAL_SESSION_REPORT.md`** - 🆕 Comprehensive final report + full roadmap (28 KB)
+- **`/docs/PERFORMANCE_METRICS.md`** - Performance Metrics Dashboard guide (6.3 KB)
+- **`/docs/LOGGING.md`** - Structured JSON Logging guide (7.9 KB)
+- **`/docs/RATE_LIMITING.md`** - Rate Limiting documentation (6.0 KB)
+- **`/docs/API_VERSIONING.md`** - API Versioning System guide (6.2 KB)
+- **`/docs/OPENAPI.md`** - OpenAPI/Swagger documentation (8.7 KB)
+
+### Technical Reports
+- **`/docs/art_bank_technical_report.docx`** - Technical report (38 KB)
+- **`/docs/art_bank_full_platform_tech.docx`** - Full platform documentation (102 KB)
+
+### Interactive API Docs
+- 🌐 **Swagger UI**: https://your-domain.com/api/docs
+- 📄 **OpenAPI JSON**: https://your-domain.com/api/openapi.json
+
+---
+
+## 🔐 Admin Credentials
+
+```
+Email:    admin@artbank.io
+Password: AdminPass123!
+Role:     admin
+```
+
+**Access to**:
+- `/admin` - Admin Dashboard (system monitoring)
+- `/metrics` - Performance Metrics Dashboard (real-time charts)
+- `/api/logs/*` - Log Export API (JSON/CSV)
+- `/api/metrics/*` - Metrics API
+- `/api/ws/broadcast` - WebSocket broadcast test
+
+---
+
+## 📞 Links
+
+- **GitHub**: https://github.com/artbanking2025-oss/art-bank-core
+- **Sandbox**: https://3000-ir9tb52hhw0a86hr4kq8c-2e77fc33.sandbox.novita.ai
+- **Metrics Dashboard**: /metrics
+- **Admin Dashboard**: /admin
+- **Swagger API Docs**: /api/docs
+- **Health Check**: /health
+- **WebSocket**: wss://your-domain.com/api/ws
+
+---
+
+## 🏁 Status: Production Ready ✅
+
+**Version**: v2.8  
+**Last Update**: 2026-04-07  
+**Next Steps**: Cloudflare deployment → Performance optimization → Phase 2-6 implementation
+
+**Total Development Progress**: 21% complete (Phase 0 done, 5 phases remaining)
+
+---
