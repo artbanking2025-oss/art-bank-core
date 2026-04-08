@@ -28,6 +28,7 @@ import v1Routes from './routes/v1';
 import v2Routes from './routes/v2';
 import metricsRoutes from './routes/metrics';
 import logsRoutes from './routes/logs';
+import rateLimitAdminRoutes from './routes/rate-limit-admin';
 import websocketRoutes from './routes/websocket';
 
 // HTML renderers (TODO: move to separate module)
@@ -346,6 +347,10 @@ app.route('/api/metrics', metricsRoutes);
 // ========== LOGS ROUTES (ADMIN ONLY) ==========
 app.use('/api/logs/*', authMiddleware, adminMiddleware);
 app.route('/api/logs', logsRoutes);
+
+// ========== RATE LIMIT ADMIN ROUTES (ADMIN ONLY) ==========
+app.use('/api/rate-limit/*', authMiddleware, adminMiddleware);
+app.route('/api/rate-limit', rateLimitAdminRoutes);
 
 // ========== WEBSOCKET ROUTES ==========
 // Real-time updates via WebSocket (no auth middleware - handled in route)

@@ -2,16 +2,20 @@
  * Rate Limiting Middleware for Art Bank API
  * 
  * Защита от DDoS и злоупотреблений API
- * Использует Cloudflare KV для хранения счётчиков запросов
+ * Hybrid storage: Cloudflare KV (production) + In-Memory (development)
+ * - Automatic fallback if KV unavailable
+ * - Per-user rate limiting для authenticated users
+ * - Per-IP rate limiting для anonymous users
  * 
  * Лимиты:
  * - Публичные эндпоинты: 60 req/min
  * - Аутентифицированные: 300 req/min
- * - Admin: unlimited
+ * - Admin: 1000 req/min
  */
 
 import type { Context, Next } from 'hono'
 import type { Env } from '../types'
+import { getRateLimitStore } from '../lib/rate-limit-store'
 
 interface RateLimitConfig {
   windowMs: number      // Временное окно в миллисекундах
@@ -91,7 +95,11 @@ function getRateLimitConfig(c: Context): RateLimitConfig {
 /**
  * Rate Limiting Middleware
  * 
- * ВАЖНО: Требует Cloudflare KV namespace в wrangler.jsonc:
+ * Automatically uses Cloudflare KV if configured, falls back to in-memory
+ * - Production: Distributed rate limiting via KV
+ * - Development: In-memory rate limiting
+ * 
+ * Optional KV configuration in wrangler.jsonc:
  * ```jsonc
  * "kv_namespaces": [
  *   {
@@ -104,61 +112,40 @@ function getRateLimitConfig(c: Context): RateLimitConfig {
  */
 export const rateLimitMiddleware = async (c: Context<Env>, next: Next) => {
   const env = c.env as any
+  const store = getRateLimitStore(env.RATE_LIMIT) // Auto-fallback to memory if undefined
   
-  // Если KV не настроен, пропускаем rate limiting (для разработки)
-  if (!env.RATE_LIMIT) {
-    console.warn('⚠️ Rate Limiting disabled: KV namespace RATE_LIMIT not configured')
-    return next()
-  }
-
   const config = getRateLimitConfig(c)
   const identifier = getClientIdentifier(c)
   const key = `${config.keyPrefix}${identifier}`
   
   try {
-    // Получить текущий счётчик из KV
-    const currentStr = await env.RATE_LIMIT.get(key)
-    const current = currentStr ? parseInt(currentStr, 10) : 0
+    // Increment counter and get result
+    const entry = await store.increment(key, config.windowMs)
     
-    // Проверить лимит
-    if (current >= config.maxRequests) {
-      // Получить TTL для информирования клиента
-      const metadata = await env.RATE_LIMIT.getWithMetadata(key)
-      const resetTime = metadata.metadata?.resetTime || Date.now() + config.windowMs
-      const retryAfter = Math.ceil((resetTime - Date.now()) / 1000)
+    // Check limit
+    if (entry.count > config.maxRequests) {
+      const retryAfter = Math.ceil((entry.resetTime - Date.now()) / 1000)
       
       return c.json({
         error: 'Too Many Requests',
         message: `Rate limit exceeded. Try again in ${retryAfter} seconds.`,
         code: 'RATE_LIMIT_EXCEEDED',
         limit: config.maxRequests,
-        reset: new Date(resetTime).toISOString()
+        remaining: 0,
+        reset: new Date(entry.resetTime).toISOString(),
+        retryAfter
       }, 429)
     }
 
-    // Увеличить счётчик
-    const newCount = current + 1
-    const expirationTtl = Math.ceil(config.windowMs / 1000) // В секундах
-    
-    if (current === 0) {
-      // Первый запрос в окне - установить TTL и metadata
-      await env.RATE_LIMIT.put(key, String(newCount), {
-        expirationTtl,
-        metadata: { resetTime: Date.now() + config.windowMs }
-      })
-    } else {
-      // Просто увеличить счётчик (TTL уже установлен)
-      await env.RATE_LIMIT.put(key, String(newCount), { expirationTtl })
-    }
-
-    // Добавить заголовки для информирования клиента
-    c.res.headers.set('X-RateLimit-Limit', String(config.maxRequests))
-    c.res.headers.set('X-RateLimit-Remaining', String(config.maxRequests - newCount))
-    c.res.headers.set('X-RateLimit-Reset', String(Date.now() + config.windowMs))
+    // Add rate limit headers
+    c.header('X-RateLimit-Limit', String(config.maxRequests))
+    c.header('X-RateLimit-Remaining', String(Math.max(0, config.maxRequests - entry.count)))
+    c.header('X-RateLimit-Reset', String(Math.floor(entry.resetTime / 1000)))
+    c.header('X-RateLimit-Mode', store.getMode()) // Debug: kv or memory
 
     await next()
   } catch (error) {
-    // В случае ошибки KV - пропускаем rate limiting
+    // In case of error - allow request (fail-open для availability)
     console.error('Rate limiting error:', error)
     await next()
   }
@@ -166,14 +153,12 @@ export const rateLimitMiddleware = async (c: Context<Env>, next: Next) => {
 
 /**
  * Строгий Rate Limiter для критических эндпоинтов (auth, admin)
+ * Строгий лимит: 10 запросов в минуту
  */
 export const strictRateLimitMiddleware = async (c: Context<Env>, next: Next) => {
   const env = c.env as any
+  const store = getRateLimitStore(env.RATE_LIMIT)
   
-  if (!env.RATE_LIMIT) {
-    return next()
-  }
-
   const identifier = getClientIdentifier(c)
   const key = `ratelimit:strict:${identifier}`
   
@@ -182,20 +167,22 @@ export const strictRateLimitMiddleware = async (c: Context<Env>, next: Next) => 
   const WINDOW_MS = 60 * 1000
 
   try {
-    const currentStr = await env.RATE_LIMIT.get(key)
-    const current = currentStr ? parseInt(currentStr, 10) : 0
+    const entry = await store.increment(key, WINDOW_MS)
     
-    if (current >= LIMIT) {
+    if (entry.count > LIMIT) {
+      const retryAfter = Math.ceil((entry.resetTime - Date.now()) / 1000)
+      
       return c.json({
         error: 'Too Many Requests',
-        message: 'Too many authentication attempts. Please try again later.',
-        code: 'STRICT_RATE_LIMIT_EXCEEDED'
+        message: `Too many authentication attempts. Please try again in ${retryAfter} seconds.`,
+        code: 'STRICT_RATE_LIMIT_EXCEEDED',
+        retryAfter
       }, 429)
     }
 
-    const newCount = current + 1
-    const expirationTtl = Math.ceil(WINDOW_MS / 1000)
-    await env.RATE_LIMIT.put(key, String(newCount), { expirationTtl })
+    c.header('X-RateLimit-Limit', String(LIMIT))
+    c.header('X-RateLimit-Remaining', String(Math.max(0, LIMIT - entry.count)))
+    c.header('X-RateLimit-Reset', String(Math.floor(entry.resetTime / 1000)))
 
     await next()
   } catch (error) {
