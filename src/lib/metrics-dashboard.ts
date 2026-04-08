@@ -25,19 +25,41 @@ export function renderMetricsDashboard(): string {
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
     <style>
+        /* Mobile-First Responsive Design */
         .chart-container {
             position: relative;
-            height: 300px;
-            margin-bottom: 2rem;
+            height: 250px; /* Меньше для mobile */
+            margin-bottom: 1.5rem;
         }
         
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+        
+        /* Touch-friendly metric cards */
         .metric-card {
             transition: all 0.3s ease;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
         }
         
-        .metric-card:hover {
+        .metric-card:hover, .metric-card:active {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        /* Mobile: larger touch targets */
+        @media (max-width: 640px) {
+            .metric-card {
+                padding: 1.5rem;
+            }
+            
+            button {
+                min-height: 44px; /* iOS recommended */
+                min-width: 44px;
+            }
         }
         
         .loading {
@@ -48,6 +70,44 @@ export function renderMetricsDashboard(): string {
             0%, 100% { opacity: 1; }
             50% { opacity: .5; }
         }
+        
+        /* Mobile hamburger menu */
+        .mobile-menu {
+            display: none;
+        }
+        
+        .mobile-menu.active {
+            display: block;
+        }
+        
+        /* Responsive header */
+        @media (max-width: 640px) {
+            .desktop-header {
+                display: none;
+            }
+            
+            .mobile-header {
+                display: flex !important;
+            }
+        }
+        
+        @media (min-width: 641px) {
+            .desktop-header {
+                display: flex !important;
+            }
+            
+            .mobile-header {
+                display: none !important;
+            }
+        }
+        
+        /* Touch-friendly charts */
+        canvas {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+            touch-action: pan-y;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -55,7 +115,8 @@ export function renderMetricsDashboard(): string {
         <!-- Header -->
         <header class="bg-white shadow-sm border-b border-gray-200">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                <div class="flex items-center justify-between">
+                <!-- Desktop Header -->
+                <div class="desktop-header items-center justify-between">
                     <div class="flex items-center space-x-4">
                         <a href="/admin" class="text-gray-600 hover:text-gray-900">
                             <i class="fas fa-arrow-left"></i>
@@ -75,6 +136,32 @@ export function renderMetricsDashboard(): string {
                         <button onclick="refreshMetrics()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                             <i class="fas fa-sync-alt mr-2"></i>Refresh
                         </button>
+                    </div>
+                </div>
+                
+                <!-- Mobile Header -->
+                <div class="mobile-header flex-col space-y-3">
+                    <div class="flex items-center justify-between w-full">
+                        <div class="flex items-center space-x-3">
+                            <a href="/admin" class="text-gray-600 hover:text-gray-900">
+                                <i class="fas fa-arrow-left text-xl"></i>
+                            </a>
+                            <h1 class="text-lg font-bold text-gray-900">
+                                <i class="fas fa-chart-line mr-2"></i>
+                                Metrics
+                            </h1>
+                        </div>
+                        <button onclick="refreshMetrics()" class="px-3 py-2 bg-blue-600 text-white rounded-lg">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    <div class="flex items-center justify-between w-full text-xs">
+                        <span id="wsStatusMobile" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            <i class="fas fa-circle mr-1"></i>Connecting...
+                        </span>
+                        <div class="text-gray-500">
+                            Updated: <span id="lastUpdateMobile" class="font-medium">-</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -248,6 +335,50 @@ export function renderMetricsDashboard(): string {
         
         // Initialize charts
         function initCharts() {
+            // Mobile-friendly chart options
+            const isMobile = window.innerWidth < 640;
+            const mobileOptions = {
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        display: !isMobile, // Hide legend on mobile
+                        labels: {
+                            font: {
+                                size: isMobile ? 10 : 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        enabled: true,
+                        mode: 'index',
+                        intersect: false,
+                        bodyFont: {
+                            size: isMobile ? 11 : 13
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        ticks: {
+                            font: {
+                                size: isMobile ? 10 : 12
+                            }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                size: isMobile ? 10 : 12
+                            },
+                            maxRotation: isMobile ? 45 : 0
+                        }
+                    }
+                }
+            };
+            
             // Response Time Chart
             const responseTimeCtx = document.getElementById('responseTimeChart').getContext('2d');
             charts.responseTime = new Chart(responseTimeCtx, {
@@ -266,17 +397,21 @@ export function renderMetricsDashboard(): string {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    ...mobileOptions,
                     scales: {
+                        ...mobileOptions.scales,
                         y: {
+                            ...mobileOptions.scales.y,
                             beginAtZero: true,
                             title: {
-                                display: true,
+                                display: !isMobile,
                                 text: 'Milliseconds'
                             }
                         },
                         x: {
+                            ...mobileOptions.scales.x,
                             title: {
-                                display: true,
+                                display: !isMobile,
                                 text: 'Time'
                             }
                         }
