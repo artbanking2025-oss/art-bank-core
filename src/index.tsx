@@ -31,6 +31,7 @@ import logsRoutes from './routes/logs';
 import rateLimitAdminRoutes from './routes/rate-limit-admin';
 import monitoringRoutes from './routes/monitoring';
 import websocketRoutes from './routes/websocket';
+import queryOptimizationRoutes from './routes/query-optimization';
 
 // HTML renderers (TODO: move to separate module)
 import { renderAnalyticsDashboard } from './analytics-dashboard-render';
@@ -356,6 +357,10 @@ app.route('/api/rate-limit', rateLimitAdminRoutes);
 // ========== MONITORING ROUTES (ADMIN ONLY) ==========
 app.use('/api/monitoring/*', authMiddleware, adminMiddleware);
 app.route('/api/monitoring', monitoringRoutes);
+
+// ========== QUERY OPTIMIZATION ROUTES (ADMIN ONLY) ==========
+app.use('/api/query-optimization/*', authMiddleware, adminMiddleware);
+app.route('/api/query-optimization', queryOptimizationRoutes);
 
 // ========== WEBSOCKET ROUTES ==========
 // Real-time updates via WebSocket (no auth middleware - handled in route)
