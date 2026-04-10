@@ -7,15 +7,21 @@
  * - Methods and endpoints
  * - Errors
  * - Real-time WebSocket broadcasting
+ * - Alert checking
  */
 
 import type { Context, Next } from 'hono';
 import { metrics } from '../lib/metrics';
 import { getWebSocketManager } from '../lib/websocket-manager';
+import { getAlertManager } from '../lib/alert-manager';
 
 // Throttle WebSocket broadcasts to avoid overwhelming clients
 let lastBroadcast = 0;
 const BROADCAST_INTERVAL = 2000; // 2 seconds
+
+// Throttle alert checks to avoid performance impact
+let lastAlertCheck = 0;
+const ALERT_CHECK_INTERVAL = 10000; // 10 seconds
 
 /**
  * Middleware to collect request metrics
@@ -53,6 +59,19 @@ export const metricsMiddleware = async (c: Context, next: Next) => {
       } catch (error) {
         // Silently fail - WebSocket is optional
         console.error('Failed to broadcast metrics:', error);
+      }
+    }
+    
+    // Check for alerts (throttled)
+    if (now - lastAlertCheck > ALERT_CHECK_INTERVAL) {
+      lastAlertCheck = now;
+      try {
+        const alertManager = getAlertManager();
+        const systemMetrics = metrics.getSystemMetrics();
+        alertManager.checkMetrics(systemMetrics);
+      } catch (error) {
+        // Silently fail - Alerts are optional
+        console.error('Failed to check alerts:', error);
       }
     }
     
