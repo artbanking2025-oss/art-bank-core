@@ -35,6 +35,7 @@ import queryOptimizationRoutes from './routes/query-optimization';
 import routerAdminRoutes from './routes/router-admin';
 import eventsRoutes from './routes/events';
 import patternsRoutes from './routes/patterns';
+import analyticsRoutes from './routes/analytics';
 
 // HTML renderers (TODO: move to separate module)
 import { renderAnalyticsDashboard } from './analytics-dashboard-render';
@@ -376,6 +377,10 @@ app.route('/api/events', eventsRoutes);
 // ========== EVENT PATTERNS ROUTES (ADMIN ONLY) ==========
 app.use('/api/patterns/*', authMiddleware, adminMiddleware);
 app.route('/api/patterns', patternsRoutes);
+
+// ========== ANALYTICS ROUTES (ADMIN ONLY) ==========
+app.use('/api/analytics/*', authMiddleware, adminMiddleware);
+app.route('/api/analytics', analyticsRoutes);
 
 // ========== WEBSOCKET ROUTES ==========
 // Real-time updates via WebSocket (no auth middleware - handled in route)
