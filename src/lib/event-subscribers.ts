@@ -194,12 +194,9 @@ function setupAnalyticsSubscribers(): void {
     consumerGroup: 'analytics-processing'
   });
 
-  // Periodic flush
-  setInterval(async () => {
-    if (analyticsBuffer.length > 0) {
-      await flushAnalyticsBuffer();
-    }
-  }, FLUSH_INTERVAL);
+  // Periodic flush - DISABLED для Cloudflare Workers
+  // В production используйте Cloudflare Cron Triggers или вызывайте flushAnalyticsBuffer() вручную
+  // setInterval() нельзя использовать в Workers global scope
 
   async function flushAnalyticsBuffer(): Promise<void> {
     const events = analyticsBuffer.splice(0, analyticsBuffer.length);

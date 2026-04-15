@@ -36,6 +36,7 @@ import routerAdminRoutes from './routes/router-admin';
 import eventsRoutes from './routes/events';
 import patternsRoutes from './routes/patterns';
 import analyticsRoutes from './routes/analytics';
+import nlpRoutes from './routes/nlp';
 
 // HTML renderers (TODO: move to separate module)
 import { renderAnalyticsDashboard } from './analytics-dashboard-render';
@@ -381,6 +382,18 @@ app.route('/api/patterns', patternsRoutes);
 // ========== ANALYTICS ROUTES (ADMIN ONLY) ==========
 app.use('/api/analytics/*', authMiddleware, adminMiddleware);
 app.route('/api/analytics', analyticsRoutes);
+
+// ========== NLP & SENTIMENT ROUTES (PROTECTED) ==========
+// Note: nlpRoutes internally uses '/nlp/*' and '/sentiment/*' paths
+// Health endpoint is public, others require auth
+app.use('/api/nlp/*', (c, next) => {
+  if (c.req.path.endsWith('/health')) {
+    return next();
+  }
+  return authMiddleware(c, next);
+});
+app.use('/api/sentiment/*', authMiddleware);
+app.route('/api', nlpRoutes);
 
 // ========== WEBSOCKET ROUTES ==========
 // Real-time updates via WebSocket (no auth middleware - handled in route)

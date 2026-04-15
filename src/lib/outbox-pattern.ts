@@ -96,63 +96,62 @@ export class Outbox {
    * Start background publisher
    */
   private startPublisher(): void {
-    if (this.publisherRunning) {
-      return;
-    }
+    // DISABLED для Cloudflare Workers
+    // setTimeout() нельзя использовать в global scope
+    console.log('⚠️  Background publisher disabled in Cloudflare Workers');
+    console.log('📝 Call publishPendingEvents() manually or use Cloudflare Cron Triggers');
+    this.publisherRunning = false;
+  }
 
-    this.publisherRunning = true;
+  /**
+   * Publish pending events manually (for Cloudflare Workers)
+   */
+  async publishPendingEvents(): Promise<number> {
+    const pending = this.getPending();
+    let published = 0;
 
-    const publish = async () => {
-      const pending = this.getPending();
-
-      for (const event of pending) {
-        // Skip if recently attempted
-        if (event.lastAttemptAt) {
-          const timeSinceLastAttempt = Date.now() - event.lastAttemptAt.getTime();
-          if (timeSinceLastAttempt < this.retryDelay) {
-            continue;
-          }
-        }
-
-        // Skip if max retries reached
-        if (event.attempts >= this.maxRetries) {
-          event.status = 'failed';
-          event.error = 'Max retries reached';
+    for (const event of pending) {
+      // Skip if recently attempted
+      if (event.lastAttemptAt) {
+        const timeSinceLastAttempt = Date.now() - event.lastAttemptAt.getTime();
+        if (timeSinceLastAttempt < this.retryDelay) {
           continue;
         }
-
-        try {
-          // Attempt to publish
-          await eventSystem.publish(event.topic, event.data, {
-            key: event.key,
-            headers: event.headers,
-            metadata: event.metadata
-          });
-
-          // Mark as published
-          event.status = 'published';
-          event.publishedAt = new Date();
-
-          console.log(`[Outbox] Published event ${event.id} to topic ${event.topic}`);
-
-        } catch (error) {
-          // Update attempt info
-          event.attempts++;
-          event.lastAttemptAt = new Date();
-          event.error = (error as Error).message;
-
-          console.error(`[Outbox] Failed to publish event ${event.id} (attempt ${event.attempts}):`, error);
-        }
       }
 
-      // Schedule next run
-      if (this.publisherRunning) {
-        setTimeout(publish, this.publishInterval);
+      // Skip if max retries reached
+      if (event.attempts >= this.maxRetries) {
+        event.status = 'failed';
+        event.error = 'Max retries reached';
+        continue;
       }
-    };
 
-    // Start publishing
-    publish();
+      try {
+        // Attempt to publish
+        await eventSystem.publish(event.topic, event.data, {
+          key: event.key,
+          headers: event.headers,
+          metadata: event.metadata
+        });
+
+        // Mark as published
+        event.status = 'published';
+        event.publishedAt = new Date();
+        published++;
+
+        console.log(`[Outbox] Published event ${event.id} to topic ${event.topic}`);
+
+      } catch (error) {
+        // Update attempt info
+        event.attempts++;
+        event.lastAttemptAt = new Date();
+        event.error = (error as Error).message;
+
+        console.error(`[Outbox] Failed to publish event ${event.id} (attempt ${event.attempts}):`, error);
+      }
+    }
+
+    return published;
   }
 
   /**
@@ -164,11 +163,11 @@ export class Outbox {
 
   /**
    * Start cleanup process
+   * Note: В Cloudflare Workers используйте ручной вызов cleanup() или Cron Triggers
    */
   private startCleanup(): void {
-    setInterval(() => {
-      this.cleanup();
-    }, this.cleanupInterval);
+    // DISABLED для Cloudflare Workers
+    console.log('⚠️  Automatic cleanup disabled - call cleanup() manually');
   }
 
   /**

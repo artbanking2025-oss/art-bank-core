@@ -202,28 +202,13 @@ export class WebSocketManager {
 
   /**
    * Heartbeat проверка соединений
+   * Note: В Cloudflare Workers нельзя использовать setInterval
+   * Heartbeat должен быть реализован через scheduled events или вызываться вручную
    */
   private startHeartbeat(): void {
-    this.heartbeatTimer = setInterval(() => {
-      const now = new Date();
-      
-      for (const [clientId, client] of this.clients.entries()) {
-        const timeSinceLastPing = now.getTime() - client.lastPing.getTime();
-        
-        // Если клиент не отвечал более 2 минут - отключаем
-        if (timeSinceLastPing > 120000) {
-          console.log(`Client ${clientId} timeout - disconnecting`);
-          this.removeClient(clientId);
-          continue;
-        }
-
-        // Отправляем ping
-        this.sendToClient(clientId, {
-          type: 'ping',
-          timestamp: new Date().toISOString()
-        });
-      }
-    }, this.heartbeatInterval);
+    // DISABLED для Cloudflare Workers
+    // В production используйте Durable Objects или Cloudflare Cron Triggers
+    console.log('Heartbeat disabled in Cloudflare Workers environment');
   }
 
   /**

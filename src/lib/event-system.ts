@@ -73,7 +73,8 @@ export class EventSystem {
 
   constructor() {
     this.initializeDefaultTopics();
-    this.startCleanupTask();
+    // Note: Cleanup не запускается автоматически в Cloudflare Workers
+    // Вызывайте cleanupOldEvents() вручную при необходимости
   }
 
   /**
@@ -454,19 +455,11 @@ export class EventSystem {
   }
 
   /**
-   * Start cleanup task (remove old events)
-   */
-  private startCleanupTask(): void {
-    // Run cleanup every 5 minutes
-    setInterval(() => {
-      this.cleanupOldEvents();
-    }, 5 * 60 * 1000);
-  }
-
-  /**
    * Clean up old events based on retention policy
+   * IMPORTANT: Must be called manually in Cloudflare Workers
+   * (no automatic background tasks via setInterval)
    */
-  private cleanupOldEvents(): void {
+  cleanupOldEvents(): void {
     const now = Date.now();
 
     for (const [topicName, events] of this.events) {

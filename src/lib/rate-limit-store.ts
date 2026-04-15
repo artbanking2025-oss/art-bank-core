@@ -17,13 +17,10 @@ export interface RateLimitEntry {
  */
 class InMemoryRateLimitStore {
   private store: Map<string, RateLimitEntry> = new Map();
-  private cleanupInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
-    // Cleanup expired entries every 60 seconds
-    this.cleanupInterval = setInterval(() => {
-      this.cleanup();
-    }, 60 * 1000);
+    // Note: Cleanup не запускается автоматически в Cloudflare Workers
+    // Cleanup происходит при каждом get() запросе
   }
 
   async get(key: string): Promise<RateLimitEntry | null> {

@@ -22,7 +22,7 @@ import {
   createPriceCalculationEvent 
 } from '../lib/events';
 import { circuitBreakers, CircuitBreakerOpenError } from '../lib/circuit-breaker';
-import { createPurchaseSaga } from '../lib/saga';
+import { createArtworkPurchaseSaga, sagaExecutor } from '../lib/saga';
 import { authMiddleware } from '../middleware/auth-middleware';
 import { adminMiddleware } from '../middleware/admin-middleware';
 import { cacheArtworks } from '../middleware/cache';
@@ -297,16 +297,17 @@ coreRoutes.post('/transactions', authMiddleware, async (c) => {
   
   try {
     // Start distributed saga for purchase
-    const saga = createPurchaseSaga(
-      body.from_node_id,
-      body.to_node_id,
-      body.artwork_id,
-      body.amount
-    );
+    const sagaId = await sagaExecutor.startSaga('artwork-purchase', {
+      fromNodeId: body.from_node_id,
+      toNodeId: body.to_node_id,
+      artworkId: body.artwork_id,
+      amount: body.amount
+    });
     
-    const result = await saga.execute();
+    // Get saga status
+    const saga = sagaExecutor.getSaga(sagaId);
     
-    if (result.status === 'completed') {
+    if (saga && saga.status === 'completed') {
       const transaction = await db.createTransaction(body);
       
       // Publish trade event
