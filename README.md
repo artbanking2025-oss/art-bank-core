@@ -1,24 +1,49 @@
-# Art Bank Core v2.9 - Art-OS: Защищённая платформа для арт-рынка 🚀🔒🔌⚡
+# Art Bank Core v2.12 - Art-OS: AI-Powered Art Market Platform 🚀🔒🔌⚡🧠
 
 ## 📊 Статус проекта
 
-**Версия**: v2.9 ✨  
-**Статус**: ✅ **PRODUCTION READY + REAL-TIME + OPTIMIZED**  
-**Последнее обновление**: 2026-04-10  
+**Версия**: v2.12 ✨🆕  
+**Статус**: ✅ **PRODUCTION READY + AI/ML + GRAPH DB + NLP**  
+**Последнее обновление**: 2026-04-15  
 **GitHub**: https://github.com/artbanking2025-oss/art-bank-core  
-**Sandbox**: https://3000-ir9tb52hhw0a86hr4kq8c-2e77fc33.sandbox.novita.ai  
+**Latest Commit**: `82d7720` - Phase 4 Complete  
 
 ### 🎯 Ключевые метрики
 
-- **80+ API Endpoints** (50+ защищённых JWT + 25+ публичных + 3 WebSocket + 8 health/metrics)
+- **148+ API Endpoints** (60+ защищённых JWT + 35+ публичных + 13 NLP/Sentiment + 40+ admin)
 - **11 полнофункциональных страниц** (9 dashboards + Auth + Profile)
-- **~11,400 строк кода** (TypeScript + 1,700 строк middleware + logging)
+- **~16,954 строк кода** (TypeScript + Graph DB + NLP + Sentiment + ML-ready)
 - **19 таблиц БД** (16 core + 3 auth + 65+ performance indexes)
-- **56 Git commits** (6 commits сегодня: Enhanced Rate Limiting + Mobile + Monitoring + Query Optimization)
-- **51 TypeScript файлов** (+ rate-limit-store.ts + prometheus-exporter.ts + query-profiler.ts)
-- **Bundle Size**: 210.65 KB (WebSocket + Monitoring + Query Optimization)
+- **62 Git commits** (Phase 0-4 complete: Foundation → Performance → Events → Analytics → Graph & NLP)
+- **74 TypeScript файлов** (+ graph-database.ts + nlp-engine.ts + sentiment-analysis.ts + graph-algorithms.ts)
+- **Bundle Size**: 296.52 KB (Full AI/ML stack ready)
 
-### 🌟 Новые фичи v2.9
+### 🌟 Новые фичи v2.12 (Phase 4: Graph & NLP) 🆕
+
+🧠 **Graph Database Engine** - Neo4j-like graph DB с Cypher queries  
+🔗 **Graph Algorithms** - PageRank, Community Detection, Centrality measures  
+📝 **NLP Engine** - Tokenization, NER (7 entity types), Keywords (TF-IDF), Topics, Language Detection (5 langs)  
+💭 **Sentiment Analysis** - Polarity (-1 to +1), Emotions (6 types), Aspect-based analysis (5 aspects)  
+📊 **Text Analytics** - Similarity, Summarization, Classification, Trend analysis  
+🎯 **13 New API Endpoints** - Full text analytics suite for art market  
+
+### 🌟 Фичи v2.11 (Phase 3: Analytics Core)
+
+📊 **Analytics Engine** - Statistical analysis (mean, median, std, percentiles, correlation)  
+📈 **Enhanced Price Corridor** - Advanced models (Linear, Exponential, Power, Log, Polynomial)  
+💹 **Market Analytics** - Trend detection, volume analysis, liquidity metrics  
+🔮 **Forecasting** - Moving averages, trend projections, anomaly detection  
+
+### 🌟 Фичи v2.10 (Phase 2: Event Systems)
+
+🎯 **Central Router** - API Gateway с service discovery, load balancing, circuit breaker  
+📡 **Event System** - Kafka-like pub/sub с topics, consumer groups, DLQ, replay  
+📦 **Event Sourcing** - Immutable event store, snapshots, time-travel queries  
+🔄 **CQRS** - Command/Query separation, read model store, projections  
+🎭 **Saga Pattern** - Distributed transactions с compensation, retry, timeouts  
+📮 **Outbox Pattern** - Reliable event publishing с retries и cleanup  
+
+### 🌟 Фичи v2.9 (Phase 1: Performance)
 
 🆕 **⚡ Enhanced Rate Limiting** - Hybrid KV + In-Memory storage с fallback (99.9% uptime)  
 🆕 **📱 Mobile Dashboard** - Touch-friendly responsive design для метрик  
@@ -255,6 +280,234 @@ curl "http://localhost:3000/api/query-optimization/patterns" \
 curl "http://localhost:3000/api/query-optimization/export?format=csv" \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   -o query-profiles.csv
+```
+
+---
+
+## 🧠 Phase 4: Graph Database & NLP (v2.12)
+
+### Graph Database Engine (Neo4j-like)
+
+Полнофункциональный graph database с Cypher-подобным query language:
+
+```typescript
+// Import
+import { getGraphDB } from './lib/graph-database';
+
+// Query examples
+const db = getGraphDB();
+
+// Find artists and their artworks
+const results = await db.query(`
+  MATCH (artist:Artist)-[:CREATED]->(artwork:Artwork)
+  WHERE artist.country = 'France'
+  RETURN artist.name, artwork.title, artwork.price
+`);
+
+// Find shortest path between nodes
+const path = await db.findShortestPath('node-1', 'node-2');
+
+// Get node neighbors
+const neighbors = await db.getNeighbors('artist-123', { depth: 2 });
+```
+
+**Features:**
+- Cypher-like query parsing
+- Pattern matching
+- Graph traversal (DFS, BFS, Shortest Path)
+- Aggregation & filtering
+- Transaction support
+
+### Graph Algorithms
+
+**PageRank** - Web ranking algorithm:
+```typescript
+import { calculatePageRank } from './lib/graph-algorithms';
+
+const ranks = calculatePageRank(nodes, edges, {
+  dampingFactor: 0.85,
+  maxIterations: 100,
+  tolerance: 0.0001
+});
+// Returns: Map<nodeId, rank>
+```
+
+**Community Detection** (Louvain):
+```typescript
+import { detectCommunities } from './lib/graph-algorithms';
+
+const communities = detectCommunities(nodes, edges);
+// Returns: Map<nodeId, communityId>
+```
+
+**Centrality Measures**:
+```typescript
+import { calculateCentrality } from './lib/graph-algorithms';
+
+// Degree centrality
+const degree = calculateCentrality(nodes, edges, 'degree');
+
+// Betweenness centrality
+const betweenness = calculateCentrality(nodes, edges, 'betweenness');
+
+// Closeness centrality
+const closeness = calculateCentrality(nodes, edges, 'closeness');
+
+// Eigenvector centrality
+const eigenvector = calculateCentrality(nodes, edges, 'eigenvector');
+```
+
+### NLP Engine
+
+**Full text analysis pipeline:**
+
+```bash
+# Full NLP analysis
+curl -X POST "http://localhost:3000/api/nlp/analyze" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "This beautiful masterpiece by Picasso sold for $50 million at Christie'\''s auction in New York."
+  }'
+
+# Response:
+{
+  "success": true,
+  "data": {
+    "tokens": [...],
+    "entities": [
+      {"text": "Picasso", "type": "ARTIST", "confidence": 0.95},
+      {"text": "$50 million", "type": "MONEY", "confidence": 0.85},
+      {"text": "Christie's", "type": "ORGANIZATION", "confidence": 0.85},
+      {"text": "New York", "type": "LOCATION", "confidence": 0.85}
+    ],
+    "keywords": [
+      {"word": "masterpiece", "score": 0.42, "frequency": 1},
+      {"word": "auction", "score": 0.38, "frequency": 1}
+    ],
+    "topics": [
+      {"id": "art-style", "keywords": ["masterpiece"], "weight": 0.42}
+    ],
+    "classification": {"category": "transaction", "confidence": 0.6},
+    "language": "en",
+    "languageConfidence": 0.95
+  }
+}
+```
+
+**Entity Recognition** (NER - 7 types):
+```bash
+curl -X POST "http://localhost:3000/api/nlp/entities" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"text": "Leonardo da Vinci painted Mona Lisa in 1503."}'
+
+# Returns: PERSON, ARTIST, ARTWORK, DATE entities
+```
+
+**Keyword Extraction** (TF-IDF):
+```bash
+curl -X POST "http://localhost:3000/api/nlp/keywords" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"text": "...", "limit": 10}'
+```
+
+**Text Similarity**:
+```bash
+curl -X POST "http://localhost:3000/api/nlp/similarity" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"text1": "...", "text2": "..."}'
+
+# Returns: {"similarity": 0.75, "interpretation": "similar"}
+```
+
+**Summarization**:
+```bash
+curl -X POST "http://localhost:3000/api/nlp/summarize" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"text": "...", "sentences": 3}'
+```
+
+### Sentiment Analysis
+
+**Polarity & Emotions**:
+
+```bash
+# Full sentiment analysis
+curl -X POST "http://localhost:3000/api/sentiment/analyze" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "text": "This beautiful masterpiece is absolutely stunning! I love it."
+  }'
+
+# Response:
+{
+  "success": true,
+  "data": {
+    "overall": {
+      "polarity": 0.85,        # -1 (negative) to +1 (positive)
+      "subjectivity": 0.72,    # 0 (objective) to 1 (subjective)
+      "confidence": 0.66
+    },
+    "emotions": {
+      "joy": 0.45,
+      "sadness": 0.0,
+      "anger": 0.0,
+      "fear": 0.0,
+      "surprise": 0.15,
+      "disgust": 0.0
+    },
+    "aspects": [
+      {
+        "aspect": "quality",
+        "sentiment": {"polarity": 0.9, "confidence": 0.8},
+        "mentions": ["beautiful masterpiece", "absolutely stunning"]
+      }
+    ],
+    "label": "positive",
+    "dominantEmotion": "joy"
+  }
+}
+```
+
+**Aspect-based Sentiment** (5 аспектов для арт-рынка):
+```bash
+curl -X POST "http://localhost:3000/api/sentiment/aspects" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"text": "..."}'
+
+# Analyzes: quality, price, authenticity, condition, investment
+```
+
+**Comparative Analysis**:
+```bash
+curl -X POST "http://localhost:3000/api/sentiment/compare" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"text1": "...", "text2": "..."}'
+
+# Returns: sentiment for both + polarity difference
+```
+
+**Trend Analysis**:
+```bash
+curl -X POST "http://localhost:3000/api/sentiment/trends" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "texts": [
+      {"text": "...", "timestamp": "2024-01-01T00:00:00Z"},
+      {"text": "...", "timestamp": "2024-01-02T00:00:00Z"}
+    ]
+  }'
+
+# Returns: temporal dynamics with moving average
+```
+
+**Shift Detection**:
+```bash
+curl -X POST "http://localhost:3000/api/sentiment/shifts" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"text": "..."}'
+
+# Detects sudden mood changes in text
 ```
 
 ---
