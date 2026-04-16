@@ -37,6 +37,7 @@ import eventsRoutes from './routes/events';
 import patternsRoutes from './routes/patterns';
 import analyticsRoutes from './routes/analytics';
 import nlpRoutes from './routes/nlp';
+import mlRoutes from './routes/ml';
 
 // HTML renderers (TODO: move to separate module)
 import { renderAnalyticsDashboard } from './analytics-dashboard-render';
@@ -394,6 +395,17 @@ app.use('/api/nlp/*', (c, next) => {
 });
 app.use('/api/sentiment/*', authMiddleware);
 app.route('/api', nlpRoutes);
+
+// ========== ML & AI ROUTES (PROTECTED) ==========
+// Note: mlRoutes internally uses '/ml/*' paths
+// Health endpoint is public, others require auth
+app.use('/api/ml/*', (c, next) => {
+  if (c.req.path.endsWith('/health')) {
+    return next();
+  }
+  return authMiddleware(c, next);
+});
+app.route('/api', mlRoutes);
 
 // ========== WEBSOCKET ROUTES ==========
 // Real-time updates via WebSocket (no auth middleware - handled in route)
