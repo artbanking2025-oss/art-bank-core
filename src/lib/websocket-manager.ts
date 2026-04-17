@@ -1,6 +1,6 @@
 /**
  * WebSocket Manager для Real-Time обновлений
- * Art Bank Core v2.7 - WebSocket Integration
+ * Art Bank Core v2.13 - WebSocket Integration
  * 
  * Поддерживает:
  * - Live обновления метрик

@@ -1,7 +1,7 @@
 /**
  * OpenAPI/Swagger Documentation Configuration
  * 
- * Auto-generates interactive API documentation for Art Bank Core v2.7
+ * Auto-generates interactive API documentation for Art Bank Core v2.13
  * Accessible at: /api/docs (Swagger UI), /api/openapi.json (OpenAPI spec)
  */
 

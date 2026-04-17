@@ -184,7 +184,7 @@ export function exportPrometheusMetrics(): string {
   // Build info
   output.push('# HELP artbank_build_info Build information');
   output.push('# TYPE artbank_build_info gauge');
-  output.push(`artbank_build_info{version="v2.9",environment="production"} 1`);
+  output.push(`artbank_build_info{version="v2.13",environment="production"} 1`);
   
   return output.join('\n') + '\n';
 }

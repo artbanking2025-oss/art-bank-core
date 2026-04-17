@@ -39,7 +39,7 @@ export interface HealthCheck {
 
 // Store service start time
 const SERVICE_START_TIME = Date.now()
-const VERSION = 'v2.7'
+const VERSION = 'v2.13'
 
 /**
  * Check database connectivity

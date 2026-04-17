@@ -1,6 +1,6 @@
 /**
  * WebSocket Routes
- * Art Bank Core v2.7 - Real-Time Communication
+ * Art Bank Core v2.13 - Real-Time Communication
  */
 
 import { Hono } from 'hono';

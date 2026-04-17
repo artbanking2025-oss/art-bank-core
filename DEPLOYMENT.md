@@ -1,495 +1,254 @@
-# 🚀 Art Bank Core - Production Deployment Guide
+# Production Deployment Guide
 
-**Version**: v2.7  
-**Last Updated**: 2026-03-25  
-**Platform**: Cloudflare Pages + D1 Database
+## Prerequisites
 
----
+1. **Cloudflare Account** with Pages enabled
+2. **GitHub Account** with repository access
+3. **API Tokens**:
+   - Cloudflare API Token (with Pages and D1 permissions)
+   - GitHub Personal Access Token (for Actions)
 
-## 📋 Prerequisites
+## Step 1: Setup Cloudflare API Token
 
-### 1. Cloudflare Account Setup
-- ✅ Active Cloudflare account
-- ✅ Cloudflare API Token with **required permissions**:
-  - ✅ **Account > Cloudflare Pages > Edit** (обязательно)
-  - ✅ **Account > D1 > Edit** (для базы данных)
-  - ✅ **Account Resources** → Include: `Your Account Name`
-  - ⚠️ **ВАЖНО**: Используйте шаблон "Edit Cloudflare Workers" или создайте Custom Token с указанными правами
-  
-### 2. Local Development Environment
-- ✅ Node.js 18+ installed
-- ✅ npm or yarn package manager
-- ✅ Git repository initialized
-- ✅ GitHub repository (for CI/CD integration)
+### Option A: Via AI Development Tool (Recommended)
+```bash
+# This will prompt you to configure your Cloudflare API token via the Deploy tab
+# The token will be securely stored and injected as CLOUDFLARE_API_TOKEN
+```
 
-### 3. Required Configuration Files
-- ✅ `wrangler.jsonc` - Cloudflare configuration
-- ✅ `package.json` - deployment scripts
-- ✅ `migrations/` - database schema migrations
-- ✅ `seed.sql` - initial production data (optional)
-- ✅ `.env.example` - environment variables template
+### Option B: Manual Setup
+1. Go to Cloudflare Dashboard → My Profile → API Tokens
+2. Create Token with permissions:
+   - Cloudflare Pages: Edit
+   - D1: Edit
+   - Workers Scripts: Edit
+3. Copy the token
 
----
+## Step 2: Configure GitHub Secrets
 
-## 🔧 Step-by-Step Deployment
+1. Go to GitHub Repository → Settings → Secrets and variables → Actions
+2. Add the following secrets:
+   - `CLOUDFLARE_API_TOKEN`: Your Cloudflare API token
 
-### Step 1: Configure Cloudflare API Key
-
-#### Option A: Using GenSpark Deploy Tab (Recommended)
-1. Click on **Deploy** tab in the sidebar
-2. Click **Add API Key** → **Cloudflare**
-3. Enter your Cloudflare API Token
-4. Click **Save**
-
-#### Option B: Manual Configuration
-1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens) → My Profile → API Tokens
-2. Click **Create Token** → Use template **"Edit Cloudflare Workers"**
-3. **Verify permissions**:
-   - ✅ Account > Cloudflare Pages > Edit
-   - ✅ Account > D1 > Edit
-   - ✅ Account Resources → Include: Your Account
-4. Click **Continue to summary** → **Create Token**
-5. Copy the token and set environment variable:
-   ```bash
-   export CLOUDFLARE_API_TOKEN="your-token-here"
-   ```
-
-⚠️ **Troubleshooting Authentication Error**:
-If you get `Authentication error [code: 10000]`:
-- Verify token has **Cloudflare Pages** permissions (not just Workers)
-- Check **Account Resources** includes your account
-- Try recreating token with "Edit Cloudflare Workers" template
-
-### Step 2: Verify Authentication
+## Step 3: Create Cloudflare Pages Project
 
 ```bash
-cd /home/user/webapp
-npm run whoami
-# Expected output: your@email.com (Account ID: xxx)
+# Make sure you're logged in
+npx wrangler whoami
+
+# Create Pages project
+npx wrangler pages project create art-bank-core \
+  --production-branch main \
+  --compatibility-date 2024-01-01
 ```
 
-### Step 3: Create Production D1 Database
+## Step 4: Create Production D1 Database
 
 ```bash
-# Create production database
-npm run db:create
+# Create database
+npx wrangler d1 create art-bank-production
 
-# Output will show:
-# ✅ Successfully created DB 'art-bank-db'
-# 📋 Database ID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+# Copy the database_id from output and update wrangler.jsonc:
+# "database_id": "YOUR_DATABASE_ID"
+
+# Apply migrations
+npx wrangler d1 migrations apply art-bank-production --remote
 ```
 
-**IMPORTANT**: Copy the `database_id` from output!
-
-### Step 4: Update wrangler.jsonc
-
-Edit `wrangler.jsonc` and replace `database_id`:
-
-```jsonc
-{
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "art-bank",
-  "compatibility_date": "2026-03-10",
-  "pages_build_output_dir": "./dist",
-  "compatibility_flags": ["nodejs_compat"],
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "art-bank-db",
-      "database_id": "PASTE-YOUR-DATABASE-ID-HERE"  // ← Replace this!
-    }
-  ]
-}
-```
-
-### Step 5: Apply Database Migrations
+## Step 5: Configure Environment Variables
 
 ```bash
-# Apply all migrations to production database
-npm run db:migrate:prod
+# Set environment variables for production
+npx wrangler pages secret put JWT_SECRET --project-name art-bank-core
+npx wrangler pages secret put API_KEY --project-name art-bank-core
 
-# Output:
-# 🌀 Executing on remote database art-bank-db:
-# ✅ Applied migration 0001_initial_schema.sql
-# ✅ Applied migration 0002_junction_tables.sql
-# ✅ Applied migration 0003_users_and_sessions.sql
-```
-
-### Step 6: (Optional) Seed Production Data
-
-```bash
-# Load initial seed data
-wrangler d1 execute art-bank-db --file=./seed.sql
-
-# ⚠️ WARNING: Only for initial deployment!
-# Do NOT run this on production with real user data!
-```
-
-### Step 7: Configure Environment Variables (Secrets)
-
-**CRITICAL**: Set production JWT secret:
-
-```bash
-# Generate strong secret
-openssl rand -base64 32
-# Output: e.g., "xK9mP2nQ5rT8wV1yZ3aB6cD7eF0gH4iJ5kL8mN1oP3qR"
-
-# Set as Cloudflare secret
-wrangler secret put JWT_SECRET --env production
-# Paste the generated secret when prompted
-```
-
-**Optional secrets** (if using external services):
-
-```bash
-wrangler secret put ANALYTICS_SERVICE_URL --env production
-wrangler secret put OPENAI_API_KEY --env production  # if using AI features
-wrangler secret put STRIPE_SECRET_KEY --env production  # if using payments
-```
-
-### Step 8: Create Cloudflare Pages Project
-
-```bash
-# Create Pages project with main branch as production
-npm run pages:create
-
-# Or manually:
-wrangler pages project create art-bank --production-branch main
-```
-
-### Step 9: Build and Deploy
-
-```bash
-# Build the application
-npm run build
-
-# Output:
-# ✓ 56 modules transformed.
-# dist/_worker.js  187.55 kB
-
-# Deploy to Cloudflare Pages
-npm run deploy
-
-# Or with explicit branch:
-npm run deploy:prod
-```
-
-**Expected deployment output:**
-```
-✨ Compiled Worker successfully
-✨ Uploading...
-✨ Deployment complete! 🎉
-📄 Deployment ID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-🔗 Production:  https://art-bank.pages.dev
-🔗 Preview:     https://main.art-bank.pages.dev
-```
-
-### Step 10: Verify Deployment
-
-```bash
-# Test production endpoint
-curl https://art-bank.pages.dev/api/health/circuit-breakers
-
-# Expected response:
-# {
-#   "circuit_breaker": { "state": "CLOSED", ... },
-#   "health": "healthy"
-# }
-```
-
-**Test authentication flow:**
-```bash
-# 1. Register test user
-curl -X POST https://art-bank.pages.dev/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@production.com",
-    "password": "SecurePass123!",
-    "full_name": "Production Test",
-    "role": "collector"
-  }'
-
-# 2. Login
-curl -X POST https://art-bank.pages.dev/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@production.com",
-    "password": "SecurePass123!"
-  }'
-
-# 3. Test protected endpoint with token
-curl -X POST https://art-bank.pages.dev/api/nodes \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -d '{"node_type":"artist","name":"Production Artist","trust_level":0.9}'
-```
-
----
-
-## 🔐 Security Configuration
-
-### 1. JWT Secret Management
-
-**NEVER use default JWT_SECRET in production!**
-
-```bash
-# Generate new secret
-openssl rand -base64 32
-
-# Set in Cloudflare
-wrangler secret put JWT_SECRET --env production
-```
-
-### 2. CORS Configuration
-
-Update `src/index.tsx` for production domains:
-
-```typescript
-// For production, restrict CORS to your domain
-app.use('/api/*', cors({
-  origin: ['https://art-bank.pages.dev', 'https://yourdomain.com'],
-  credentials: true
-}));
-```
-
-### 3. Rate Limiting (Recommended)
-
-Add rate limiting middleware:
-
-```bash
-npm install @hono/rate-limiter
-```
-
-### 4. Database Access Control
-
-- Use Cloudflare D1 built-in access control
-- Enable audit logging
-- Regular backups via wrangler CLI
-
----
-
-## 🌐 Custom Domain Setup (Optional)
-
-### Step 1: Add Custom Domain
-
-```bash
-wrangler pages domain add yourdomain.com --project-name art-bank
-```
-
-### Step 2: Configure DNS
-
-1. Go to Cloudflare Dashboard → DNS
-2. Add CNAME record:
-   - Name: `@` (or subdomain)
-   - Target: `art-bank.pages.dev`
-   - Proxy status: Proxied (orange cloud)
-
-### Step 3: SSL/TLS Configuration
-
-- Cloudflare automatically provisions SSL certificate
-- Enable "Always Use HTTPS" in SSL/TLS settings
-- Set minimum TLS version to 1.2
-
----
-
-## 📊 Monitoring & Logging
-
-### 1. Cloudflare Analytics
-
-Access via Cloudflare Dashboard:
-- Pages → art-bank → Analytics
-- Monitor requests, errors, latency
-
-### 2. Real-time Logs
-
-```bash
-# Tail production logs
-wrangler pages deployment tail --project-name art-bank
-
-# Filter by status code
-wrangler pages deployment tail --project-name art-bank --status 500
-```
-
-### 3. D1 Database Monitoring
-
-```bash
-# Check database size
-wrangler d1 info art-bank-db
-
-# Query production database
-wrangler d1 execute art-bank-db --command="SELECT COUNT(*) FROM users"
-```
-
----
-
-## 🔄 CI/CD Integration (GitHub Actions)
-
-Create `.github/workflows/deploy.yml`:
-
-```yaml
-name: Deploy to Cloudflare Pages
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    name: Deploy
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Build
-        run: npm run build
-        
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: pages deploy dist --project-name art-bank
-```
-
-**Required GitHub Secrets:**
-- `CLOUDFLARE_API_TOKEN` - your Cloudflare API token
-
----
-
-## 🐛 Troubleshooting
-
-### Issue: "401 Unauthorized" during deployment
-
-**Solution**: Check API token permissions
-```bash
-wrangler whoami
-# If fails, reconfigure API token in Deploy tab
-```
-
-### Issue: "Database not found"
-
-**Solution**: Verify database_id in wrangler.jsonc
-```bash
-wrangler d1 list
-# Find your database ID and update wrangler.jsonc
-```
-
-### Issue: "Module not found" errors
-
-**Solution**: Ensure all dependencies are installed
-```bash
-rm -rf node_modules package-lock.json
-npm install
-npm run build
-```
-
-### Issue: JWT verification fails in production
-
-**Solution**: Ensure JWT_SECRET is set correctly
-```bash
 # List secrets
-wrangler secret list --project-name art-bank
-
-# Re-set JWT_SECRET if needed
-wrangler secret put JWT_SECRET --env production
+npx wrangler pages secret list --project-name art-bank-core
 ```
 
-### Issue: CORS errors in production
+## Step 6: Deploy to Production
 
-**Solution**: Update CORS configuration in src/index.tsx
-```typescript
-app.use('/api/*', cors({
-  origin: 'https://art-bank.pages.dev',  // Add your production domain
-  credentials: true
-}));
+### Manual Deployment
+```bash
+# Build project
+npm run build
+
+# Deploy
+npx wrangler pages deploy dist --project-name art-bank-core --branch main
 ```
 
----
+### Automatic Deployment (CI/CD)
+Push to `main` branch - GitHub Actions will automatically:
+1. Run tests and type checking
+2. Build the project
+3. Apply database migrations
+4. Deploy to Cloudflare Pages
+5. Create deployment tag
 
-## 📦 Database Backup & Restore
-
-### Backup Production Database
+## Step 7: Verify Deployment
 
 ```bash
-# Export all tables
-wrangler d1 execute art-bank-db --command="SELECT * FROM nodes" --json > backup_nodes.json
-wrangler d1 execute art-bank-db --command="SELECT * FROM users" --json > backup_users.json
+# Check deployment status
+curl https://art-bank-core.pages.dev/health
 
-# Or use custom backup script
-wrangler d1 execute art-bank-db --file=./scripts/backup.sql > full_backup.sql
+# Test API endpoints
+curl https://art-bank-core.pages.dev/api/nlp/health
+curl https://art-bank-core.pages.dev/api/ml/health
+
+# Check with authentication
+TOKEN=$(curl -X POST https://art-bank-core.pages.dev/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"Test123!@#"}' \
+  | jq -r '.tokens.access_token')
+
+curl https://art-bank-core.pages.dev/api/sentiment/analyze \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Great artwork!"}'
 ```
 
-### Restore from Backup
+## Step 8: Setup Custom Domain (Optional)
 
 ```bash
-# Restore specific table
-wrangler d1 execute art-bank-db --file=./backup_users.sql
+# Add custom domain
+npx wrangler pages domain add artbank.example.com --project-name art-bank-core
+
+# Verify DNS settings
+# Add CNAME record: artbank.example.com → art-bank-core.pages.dev
 ```
 
+## Step 9: Monitoring & Alerts
+
+### Cloudflare Analytics
+- Dashboard: https://dash.cloudflare.com/
+- Pages Analytics: View traffic, requests, errors
+- D1 Analytics: Monitor database performance
+
+### Custom Monitoring
+```bash
+# Access Prometheus metrics
+curl https://art-bank-core.pages.dev/api/monitoring/metrics
+
+# Check alerts
+curl https://art-bank-core.pages.dev/api/monitoring/alerts \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+## Step 10: Load Testing
+
+```bash
+# Install k6
+brew install k6  # macOS
+# or
+sudo apt install k6  # Ubuntu
+
+# Run load tests
+k6 run tests/load/api-load-test.js
+
+# Run with custom parameters
+k6 run --vus 100 --duration 5m tests/load/api-load-test.js
+```
+
+## Production Checklist
+
+- [ ] Cloudflare API token configured
+- [ ] GitHub secrets configured
+- [ ] D1 database created and migrated
+- [ ] Environment variables set
+- [ ] Initial deployment successful
+- [ ] Health checks passing
+- [ ] Authentication working
+- [ ] API endpoints responding
+- [ ] Load testing completed
+- [ ] Monitoring configured
+- [ ] Custom domain configured (optional)
+- [ ] SSL certificate active
+- [ ] Rate limiting configured
+- [ ] Backup strategy in place
+
+## Rollback Procedure
+
+If deployment fails or has issues:
+
+```bash
+# List deployments
+npx wrangler pages deployments list --project-name art-bank-core
+
+# Rollback to previous deployment
+npx wrangler pages deployments rollback <DEPLOYMENT_ID> --project-name art-bank-core
+```
+
+## Database Migrations
+
+### Apply New Migration
+```bash
+# Create migration file in migrations/
+# Then apply:
+npx wrangler d1 migrations apply art-bank-production --remote
+```
+
+### Rollback Migration
+```bash
+# Not directly supported - manual rollback required
+# 1. Create new migration to reverse changes
+# 2. Apply the rollback migration
+```
+
+## Troubleshooting
+
+### Deployment Fails
+```bash
+# Check build logs
+npm run build
+
+# Check Wrangler logs
+npx wrangler pages deployments list --project-name art-bank-core
+
+# Verify API token
+npx wrangler whoami
+```
+
+### Database Connection Issues
+```bash
+# Test D1 connection
+npx wrangler d1 execute art-bank-production --remote --command="SELECT 1"
+
+# Check migrations status
+npx wrangler d1 migrations list art-bank-production --remote
+```
+
+### API Errors
+```bash
+# Check error logs (via Cloudflare Dashboard)
+# Or use structured logging API:
+curl https://art-bank-core.pages.dev/api/logs/search?level=error \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+## Scaling Considerations
+
+### Database
+- Cloudflare D1: Automatically scales reads globally
+- Write performance: ~1000 writes/second (D1 limit)
+- Consider external DB (PlanetScale, Neon) for higher write load
+
+### Compute
+- Workers: 100k requests/day on free plan
+- Paid plan: Unlimited requests, $0.50/million
+- CPU time: 10ms free, 30ms paid
+
+### Storage
+- Pages: 20k files, 25MB per file
+- R2: Unlimited storage (pay for usage)
+- D1: 5GB free, additional storage available
+
+## Support & Resources
+
+- **Cloudflare Docs**: https://developers.cloudflare.com/pages/
+- **GitHub**: https://github.com/artbanking2025-oss/art-bank-core
+- **Issues**: Report bugs via GitHub Issues
+
 ---
 
-## ✅ Post-Deployment Checklist
-
-- [ ] ✅ Production database created and migrated
-- [ ] ✅ JWT_SECRET configured in Cloudflare secrets
-- [ ] ✅ Application deployed successfully
-- [ ] ✅ Production URL accessible (https://art-bank.pages.dev)
-- [ ] ✅ API endpoints responding correctly
-- [ ] ✅ Authentication flow working (register, login, protected routes)
-- [ ] ✅ Database queries executing properly
-- [ ] ✅ CORS configured for production domains
-- [ ] ✅ Custom domain configured (if applicable)
-- [ ] ✅ SSL/TLS enabled
-- [ ] ✅ Monitoring enabled (Cloudflare Analytics)
-- [ ] ✅ Backup strategy implemented
-- [ ] ✅ CI/CD pipeline set up (GitHub Actions)
-- [ ] ✅ Error tracking configured
-- [ ] ✅ Documentation updated
-
----
-
-## 🚀 Next Steps After Deployment
-
-1. **Performance Optimization**
-   - Enable Cloudflare cache for static assets
-   - Implement service worker for offline support
-   - Add edge caching for API responses
-
-2. **Security Hardening**
-   - Enable rate limiting
-   - Set up WAF rules
-   - Configure DDoS protection
-
-3. **Feature Enhancements**
-   - Add monitoring dashboards
-   - Implement analytics tracking
-   - Set up alert notifications
-
-4. **Scaling Considerations**
-   - Monitor D1 database size limits
-   - Consider read replicas for heavy traffic
-   - Implement CDN for global users
-
----
-
-## 📞 Support & Resources
-
-- **Cloudflare Pages Docs**: https://developers.cloudflare.com/pages/
-- **D1 Database Docs**: https://developers.cloudflare.com/d1/
-- **Wrangler CLI Docs**: https://developers.cloudflare.com/workers/wrangler/
-- **Hono Framework**: https://hono.dev/
-
----
-
-**Deployment Status**: 🟢 Ready for Production  
-**Platform**: Cloudflare Pages + D1  
-**Version**: v2.7  
-**Bundle Size**: 187.5 KB
+**Last Updated**: 2026-04-15  
+**Version**: v2.13 (Phase 6)

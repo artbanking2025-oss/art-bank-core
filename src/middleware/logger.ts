@@ -1,7 +1,7 @@
 /**
  * Structured Logging Middleware
  * 
- * Provides comprehensive logging for Art Bank Core v2.7
+ * Provides comprehensive logging for Art Bank Core v2.13
  * Features:
  * - JSON structured logs
  * - Request/Response tracking

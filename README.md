@@ -1,24 +1,43 @@
-# Art Bank Core v2.12 - Art-OS: AI-Powered Art Market Platform 🚀🔒🔌⚡🧠
+# Art Bank Core v2.13 - Art-OS: Full-Stack AI Art Market Platform 🚀🔒🔌⚡🧠🎯
 
 ## 📊 Статус проекта
 
-**Версия**: v2.12 ✨🆕  
-**Статус**: ✅ **PRODUCTION READY + AI/ML + GRAPH DB + NLP**  
+**Версия**: v2.13 ✨🆕 **PRODUCTION READY**  
+**Статус**: ✅ **COMPLETE - ALL PHASES FINISHED**  
 **Последнее обновление**: 2026-04-15  
 **GitHub**: https://github.com/artbanking2025-oss/art-bank-core  
-**Latest Commit**: `82d7720` - Phase 4 Complete  
+**Latest Commit**: `72e1e01` - Phase 5 Complete  
+**Production URL**: https://art-bank-core.pages.dev
 
 ### 🎯 Ключевые метрики
 
-- **148+ API Endpoints** (60+ защищённых JWT + 35+ публичных + 13 NLP/Sentiment + 40+ admin)
+- **155+ API Endpoints** (60+ защищённых JWT + 40+ публичных + 13 NLP + 7 ML + 35+ admin)
 - **11 полнофункциональных страниц** (9 dashboards + Auth + Profile)
-- **~16,954 строк кода** (TypeScript + Graph DB + NLP + Sentiment + ML-ready)
+- **~18,661 строк кода** (TypeScript + Full AI/ML stack)
 - **19 таблиц БД** (16 core + 3 auth + 65+ performance indexes)
-- **62 Git commits** (Phase 0-4 complete: Foundation → Performance → Events → Analytics → Graph & NLP)
-- **74 TypeScript файлов** (+ graph-database.ts + nlp-engine.ts + sentiment-analysis.ts + graph-algorithms.ts)
-- **Bundle Size**: 296.52 KB (Full AI/ML stack ready)
+- **65 Git commits** (Phases 0-6 complete: Foundation → ML/AI → Production)
+- **78 TypeScript файлов** (Complete backend + Graph DB + NLP + Sentiment + ML + Infrastructure)
+- **Bundle Size**: 315.34 KB (Full production-ready stack)
 
-### 🌟 Новые фичи v2.12 (Phase 4: Graph & NLP) 🆕
+### 🌟 Новые фичи v2.13 (Phase 5: ML & AI) 🆕
+
+🤖 **ML Utilities** - Normalization, Standardization, Train/Test Split, Feature Engineering  
+📈 **Price Prediction** - 4 models (MA, Exponential Smoothing, Linear Trend, LSTM-like)  
+🔍 **Anomaly Detection** - 6 methods (Z-score, IQR, MAD, Isolation Forest, Time Series, Combined)  
+🚨 **Fraud Detection** - Pattern recognition (Rapid transactions, Round amounts, Circular trading)  
+📊 **Model Evaluation** - MSE, RMSE, MAE, MAPE, R² metrics  
+🎯 **7 New ML API Endpoints** - Training, prediction, anomaly & fraud detection  
+
+### 🌟 Фичи v2.13 (Phase 6: Production Infrastructure) 🆕
+
+🚀 **CI/CD Pipeline** - GitHub Actions with automated deployment  
+📦 **Load Testing** - K6 scripts (Smoke, Load, Stress, Spike tests)  
+📋 **Deployment Guide** - Complete production setup documentation  
+🔒 **Security Hardening** - Environment variables, secrets management  
+📊 **Production Monitoring** - Prometheus metrics, alerts, health checks  
+🏗️ **Infrastructure as Code** - Automated database migrations, rollback procedures  
+
+### 🌟 Фичи v2.12 (Phase 4: Graph & NLP)
 
 🧠 **Graph Database Engine** - Neo4j-like graph DB с Cypher queries  
 🔗 **Graph Algorithms** - PageRank, Community Detection, Centrality measures  
@@ -659,3 +678,56 @@ Role:     admin
 **Total Development Progress**: 21% complete (Phase 0 done, 5 phases remaining)
 
 ---
+
+
+---
+
+## 🚀 Production Deployment
+
+### Quick Start
+
+```bash
+# 1. Setup Cloudflare API token
+# Via Deploy tab in AI Development Tool or manually
+
+# 2. Create Pages project
+npx wrangler pages project create art-bank-core --production-branch main
+
+# 3. Create D1 database
+npx wrangler d1 create art-bank-production
+
+# 4. Update wrangler.jsonc with database_id
+
+# 5. Apply migrations
+npx wrangler d1 migrations apply art-bank-production --remote
+
+# 6. Deploy
+npm run build
+npx wrangler pages deploy dist --project-name art-bank-core
+```
+
+### Full Documentation
+
+See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for complete production deployment guide.
+
+---
+
+## 📚 Additional Resources
+
+- **Load Testing**: `tests/load/api-load-test.js` - K6 scripts for performance testing
+- **CI/CD Pipeline**: `.github/workflows/ci.yml` - Automated deployment
+- **Migrations**: `migrations/` - Database schema evolution
+- **Health Checks**: `/health`, `/api/nlp/health`, `/api/ml/health`
+
+---
+
+## 📄 License
+
+MIT License - See LICENSE file for details
+
+---
+
+**Built with ❤️ by Art Banking 2025 OSS Team**  
+**Repository**: https://github.com/artbanking2025-oss/art-bank-core  
+**Version**: v2.13 (Complete - All Phases Finished)
+

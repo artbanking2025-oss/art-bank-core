@@ -16,7 +16,7 @@ export function renderAdminDashboard() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Art Bank Core v2.7</title>
+    <title>Admin Dashboard - Art Bank Core v2.13</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
@@ -33,7 +33,7 @@ export function renderAdminDashboard() {
                             <i class="fas fa-shield-alt text-red-600 mr-2"></i>
                             Admin Dashboard
                         </h1>
-                        <p class="text-sm text-gray-600">Art Bank Core v2.7 - System Monitoring</p>
+                        <p class="text-sm text-gray-600">Art Bank Core v2.13 - System Monitoring</p>
                     </div>
                     <div class="flex items-center space-x-4">
                         <button onclick="refreshData()" 

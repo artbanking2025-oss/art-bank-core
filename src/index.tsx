@@ -478,7 +478,7 @@ function renderLandingPage() {
     <div class="min-h-screen">
         <header class="bg-white shadow-sm">
             <div class="max-w-7xl mx-auto px-4 py-4">
-                <h1 class="text-2xl font-bold text-gray-900">Art Bank Core v2.7</h1>
+                <h1 class="text-2xl font-bold text-gray-900">Art Bank Core v2.13</h1>
                 <p class="text-sm text-gray-600">Production-Ready Art Banking Platform</p>
             </div>
         </header>
